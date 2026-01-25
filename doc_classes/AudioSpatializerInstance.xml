@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="AudioSpatializerInstance" inherits="RefCounted" keywords="sound, sfx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Audio Spatializer Instance calculates spatialization for an [AudioStreamPlayerSpatial].
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="_calculate_spatialization" qualifiers="virtual required">
+			<return type="SpatializerParameters" />
+			<description>
+			</description>
+		</method>
+		<method name="_initialize_audio_player" qualifiers="virtual">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="_instantiate_playback_data" qualifiers="virtual">
+			<return type="SpatializerPlaybackData" />
+			<description>
+			</description>
+		</method>
+		<method name="_mix_channel" qualifiers="virtual">
+			<return type="void" />
+			<param index="0" name="spatial_parameters" type="SpatializerParameters" />
+			<param index="1" name="playback_data" type="SpatializerPlaybackData" />
+			<param index="2" name="channel" type="int" />
+			<param index="3" name="output_buf" type="AudioFrame*" />
+			<param index="4" name="source_buf" type="const void*" />
+			<param index="5" name="frame_count" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="_process_frames" qualifiers="virtual">
+			<return type="void" />
+			<param index="0" name="spatial_parameters" type="SpatializerParameters" />
+			<param index="1" name="playback_data" type="SpatializerPlaybackData" />
+			<param index="2" name="output_buf" type="AudioFrame*" />
+			<param index="3" name="source_buf" type="const void*" />
+			<param index="4" name="frame_count" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="_should_mix_channels" qualifiers="virtual const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="_should_process_frames" qualifiers="virtual const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

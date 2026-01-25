@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpatializerParameters3D" inherits="SpatializerParameters" keywords="sound, sfx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_attenuation_filter_cutoff_hz" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="get_linear_attenuation" qualifiers="const">
+			<return type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_attenuation_filter_cutoff_hz">
+			<return type="void" />
+			<param index="0" name="pitch_scale" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_linear_attenuation">
+			<return type="void" />
+			<param index="0" name="att" type="float" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

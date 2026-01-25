@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpatializerPlaybackData" inherits="RefCounted" keywords="sound, sfx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Data structure that holds per stream playback data, used by [AudioSpatializer].
+	</brief_description>
+	<description>
+		Implementations of [AudioSpatializer] can extend this class to hold any relevant data that might be useful for mixing audio playback data into the mix buffer. Each individual playback of the audio stream gets its own instance, and can be read and written in either [method AudioSpatializerInstance.process_frames] or [method AudioSpatializerInstance.mix_channel], in order to communicate between methods, and between subsequent frames.
+	</description>
+	<tutorials>
+	</tutorials>
+</class>

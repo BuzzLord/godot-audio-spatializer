@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpatializerPlaybackData3D" inherits="SpatializerPlaybackData" keywords="sound, sfx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_prev_mix_volume" qualifiers="const">
+			<return type="Vector2" />
+			<param index="0" name="channel" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_prev_mix_volume">
+			<return type="void" />
+			<param index="0" name="channel" type="int" />
+			<param index="1" name="volume" type="Vector2" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>

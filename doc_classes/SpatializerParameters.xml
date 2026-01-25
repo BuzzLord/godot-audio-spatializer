@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpatializerParameters" inherits="RefCounted" keywords="sound, sfx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Parameter structure used by [AudioSpatializer].
+	</brief_description>
+	<description>
+		Implementations of [AudioSpatializer] can extend this class to hold any sort of physics calculations necessary for calculating audio spatialization. Calls to [method AudioSpatializerInstance.calculate_spatialization] should instantiate and populate it, before returning it each frame.
+		Implementations should extend [SpatializerParameters], but should set the parameters of this class to configure how the [AudioSpatializer] mixes the sound.
+		Note: [method AudioSpatializerInstance.calculate_spatialization] is called during the physics process, and thus has access to the physics subsystem.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_bus_volume">
+			<return type="void" />
+			<param index="0" name="bus" type="StringName" />
+			<param index="1" name="volumes" type="PackedVector2Array" />
+			<description>
+				Add a list of volumes for the specified audio bus. [param bus] should correspond to a valid audio bus. [param volumes] should be size 4, where each index corresponds to a different pair of volumes for the different stereo channels.
+				Volumes are added to a Dictionary, keyed by [param bus].
+			</description>
+		</method>
+		<method name="get_bus_volumes" qualifiers="const">
+			<return type="Dictionary" />
+			<description>
+				Return the stored [bus_volumes] dictionary, constructed with calls to [method add_bus_volume].
+			</description>
+		</method>
+		<method name="get_mix_volumes" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<description>
+				Get the [mix_volumes] list of volumes.
+			</description>
+		</method>
+		<method name="get_pitch_scale" qualifiers="const">
+			<return type="float" />
+			<description>
+				Get the value of [pitch_scale].
+			</description>
+		</method>
+		<method name="set_mix_volumes">
+			<return type="void" />
+			<param index="0" name="volumes" type="PackedVector2Array" />
+			<description>
+				Sets the [mix_volumes] list of volumes. Size should be 4, for each stereo channel pair usable in Godot.
+				When [AudioSpatializerInstance] is configured to mix channels internally, the volumes passed to [AudioServer] are divided by these, in order to limit the mixing done in the [AudioServer] to only gain adjust on secondary audio buses.
+				If mix channels is disabled, then [bus_volumes] are sent as is to [AudioServer].
+			</description>
+		</method>
+		<method name="set_pitch_scale">
+			<return type="void" />
+			<param index="0" name="pitch_scale" type="float" />
+			<description>
+				Sets the pitch scale used to mix samples from the audio stream.
+			</description>
+		</method>
+		<method name="set_update_parameters">
+			<return type="void" />
+			<param index="0" name="update" type="bool" />
+			<description>
+				Sets the [update_parameters] flag, used to indicate whether [bus_volumes] has changed or not. Used to avoid sending empty [bus_volumes] updates every frame for sounds that are out of range.
+			</description>
+		</method>
+		<method name="should_update_parameters" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Gets the state of the [update_parameters] flag.
+			</description>
+		</method>
+	</methods>
+</class>

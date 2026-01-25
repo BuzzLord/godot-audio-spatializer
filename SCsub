@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+from misc.utility.scons_hints import *
+
+Import("env")
+Import("env_modules")
+
+# source_files = [
+#     "register_types.cpp",
+#     "spatializer_parameters.cpp",
+#     "spatializer_results.cpp",
+#     "spatializer_playback_data.cpp",
+# ]
+
+env_spatial_audio_effect = env_modules.Clone()
+env_spatial_audio_effect.add_source_files(env.modules_sources, "*.cpp")
+# env_spatial_audio_effect.add_source_files(env.modules_sources, source_files)
+
+# if env["tests"]:
+#     env_spatial_audio_effect.Append(CPPDEFINES=["TESTS_ENABLED"])
+#     env_spatial_audio_effect.add_source_files(env.modules_sources, "./tests/*.cpp")
+
+#     if env["disable_exceptions"]:
+#         env_spatial_audio_effect.Append(CPPDEFINES=["DOCTEST_CONFIG_NO_EXCEPTIONS_BUT_WITH_ALL_ASSERTS"])
