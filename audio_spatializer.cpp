@@ -593,6 +593,8 @@ void AudioSpatializerInstance::_bind_methods() {
 	GDVIRTUAL_BIND(_mix_channel, "spatial_parameters", "playback_data", "channel", "output_buf", "source_buf", "frame_count");
 	GDVIRTUAL_BIND(_instantiate_playback_data);
 	GDVIRTUAL_BIND(_initialize_audio_player);
+
+	ClassDB::bind_method(D_METHOD("get_audio_player"), &AudioSpatializerInstance::get_audio_player);
 }
 
 AudioSpatializerInstance::AudioSpatializerInstance() {

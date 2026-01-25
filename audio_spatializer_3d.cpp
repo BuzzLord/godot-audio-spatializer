@@ -403,7 +403,7 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 		}
 
 		parameters->set_linear_attenuation(Math::db_to_linear(db_att));
-		parameters->set_attenuation_filter_cutoff_hz(parameters->get_attenuation_filter_cutoff_hz());
+		parameters->set_attenuation_filter_cutoff_hz(base->get_attenuation_filter_cutoff_hz());
 
         for (Vector2 &frame : tmp_volume) {
 			frame = Vector2(0, 0);

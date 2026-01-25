@@ -41,10 +41,10 @@ void initialize_audio_spatializer_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	GDREGISTER_ABSTRACT_CLASS(AudioSpatializer);
-	GDREGISTER_ABSTRACT_CLASS(AudioSpatializerInstance);
-	GDREGISTER_ABSTRACT_CLASS(SpatializerParameters);
-	GDREGISTER_ABSTRACT_CLASS(SpatializerPlaybackData);
+	GDREGISTER_VIRTUAL_CLASS(AudioSpatializer);
+	GDREGISTER_VIRTUAL_CLASS(AudioSpatializerInstance);
+	GDREGISTER_VIRTUAL_CLASS(SpatializerParameters);
+	GDREGISTER_VIRTUAL_CLASS(SpatializerPlaybackData);
 
 	GDREGISTER_CLASS(AudioStreamPlayerSpatial);
 
