@@ -32,6 +32,7 @@
 
 #include "audio_spatializer.h"
 #include "audio_spatializer_3d.h"
+#include "audio_spatializer_effect.h"
 #include "audio_stream_player_spatial.h"
 
 #include "core/object/class_db.h"
@@ -52,6 +53,10 @@ void initialize_audio_spatializer_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(AudioSpatializerInstance3D);
 	GDREGISTER_CLASS(SpatializerParameters3D);
 	GDREGISTER_CLASS(SpatializerPlaybackData3D);
+
+	GDREGISTER_CLASS(AudioSpatializerEffect);
+	GDREGISTER_CLASS(AudioSpatializerInstanceEffect);
+	GDREGISTER_CLASS(SpatializerPlaybackDataEffect);
 }
 
 void uninitialize_audio_spatializer_module(ModuleInitializationLevel p_level) {

@@ -21,6 +21,9 @@ def get_doc_classes():
         "AudioSpatializerInstance3D",
         "SpatializerParameters3D",
         "SpatializerPlaybackData3D",
+        "AudioSpatializerEffect",
+        "AudioSpatializerInstanceEffect",
+        "SpatializerPlaybackDataEffect",
     ]
 
 
