@@ -45,7 +45,6 @@ class AudioStreamPlayerSpatial : public Node3D {
 	GDCLASS(AudioStreamPlayerSpatial, Node3D);
 
 public:
-
 	typedef void (*AudioCallback)(void *p_userdata);
 
 private:
@@ -93,12 +92,12 @@ private:
 	};
 
 	SafeList<CallbackItem *> transform_changed_callback_list;
-	
+
 	Vector<Ref<AudioStreamPlayback>> stream_playbacks;
 	Ref<AudioStream> stream;
-	
+
 	SafeFlag active;
-	
+
 	float pitch_scale = 1.0;
 	float volume_db = 0.0;
 	bool autoplay = false;
@@ -118,7 +117,6 @@ protected:
 	void ensure_playback_limit();
 
 public:
-	
 	void set_spatializer(Ref<AudioSpatializer> p_spatializer);
 	Ref<AudioSpatializer> get_spatializer() const;
 

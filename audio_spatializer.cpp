@@ -38,15 +38,13 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/main/viewport.h"
 
-
 ///////////////////////////////////////////////////////////////
 // AudioStreamPlayback functions
 
 void AudioSpatializerInstance::start_playback_stream(Ref<AudioStreamPlayback> p_playback, float p_start_time) {
-	
 	// print_verbose("AudioSpatializerInstance::start_playback_stream")
 	ERR_FAIL_COND(p_playback.is_null());
-	
+
 	//print_verbose("AudioSpatializerInstance start_playback_stream: start");
 	Ref<SpatializerParameters> params = get_spatializer_parameters();
 	// Check if null for some reason, since get_bus_map uses params below.
@@ -63,16 +61,16 @@ void AudioSpatializerInstance::start_playback_stream(Ref<AudioStreamPlayback> p_
 	for (AudioFrame &frame : playback_node->lookahead) {
 		frame = AudioFrame(0, 0);
 	}
-	
+
 	//print_verbose("AudioSpatializerInstance start_playback_stream: lookahead populated");
 
 	playback_node->active.set();
 	playback_node->playback_data = instantiate_playback_data();
-	
+
 	//print_verbose("AudioSpatializerInstance start_playback_stream: set active and playback data instantiated");
 
 	int count = channel_count.get();
-	
+
 	playback_node->spatial_playbacks.resize(count);
 	for (int channel_idx = 0; channel_idx < count; channel_idx++) {
 		Ref<AudioStreamPlaybackSpatial> spatial_playback;
@@ -112,7 +110,7 @@ void AudioSpatializerInstance::stop_playback_stream(Ref<AudioStreamPlayback> p_p
 
 void AudioSpatializerInstance::set_playback_paused(Ref<AudioStreamPlayback> p_playback, bool p_paused) {
 	ERR_FAIL_COND(p_playback.is_null());
-	
+
 	//print_verbose(vformat("AudioSpatializerInstance set_playback_paused: %s", p_paused ? "true" : "false"));
 
 	SpatialPlaybackListNode *playback_node = _find_playback_list_node(p_playback);
@@ -125,7 +123,7 @@ void AudioSpatializerInstance::set_playback_paused(Ref<AudioStreamPlayback> p_pl
 			AudioServer::get_singleton()->set_playback_paused(playback_node->spatial_playbacks[channel_idx], p_paused);
 		}
 	}
-	
+
 	// SpatialPlaybackListNode::PlaybackState new_state, old_state;
 	// do {
 	// 	old_state = playback_node->state.load();
@@ -192,7 +190,7 @@ bool AudioSpatializerInstance::is_playback_paused(Ref<AudioStreamPlayback> p_pla
 	if (!playback_node->active.is_set()) {
 		return false;
 	}
-	
+
 	if (!playback_node->spatial_playbacks[0]->active.is_set()) {
 		return false;
 	}
@@ -217,12 +215,12 @@ void AudioSpatializerInstance::init_channels_and_buffers() {
 		if (params.is_null()) {
 			return;
 		}
-		
+
 		// Changing channels just clears all playing audio
 		for (SpatialPlaybackListNode *playback_node : playback_list) {
 			// Save playback position
 			float playback_pos = playback_node->stream_playback->get_playback_position();
-			
+
 			// Stop all current playback streams
 			for (int i = 0; i < playback_node->spatial_playbacks.size(); i++) {
 				AudioServer::get_singleton()->stop_playback_stream(playback_node->spatial_playbacks[i]);
@@ -267,7 +265,7 @@ bool AudioSpatializerInstance::should_process_frames() const {
 	return ret;
 }
 
-void AudioSpatializerInstance::process_frames(Ref<SpatializerParameters> p_spatial_parameters, Ref<SpatializerPlaybackData> p_playback_data, 
+void AudioSpatializerInstance::process_frames(Ref<SpatializerParameters> p_spatial_parameters, Ref<SpatializerPlaybackData> p_playback_data,
 		AudioFrame *p_output_buf, const AudioFrame *p_source_buf, int p_frame_count) {
 	GDVIRTUAL_CALL(_process_frames, p_spatial_parameters, p_playback_data, p_output_buf, p_source_buf, p_frame_count);
 }
@@ -278,7 +276,7 @@ bool AudioSpatializerInstance::should_mix_channels() const {
 	return ret;
 }
 
-void AudioSpatializerInstance::mix_channel(Ref<SpatializerParameters> p_spatial_parameters, Ref<SpatializerPlaybackData> p_playback_data, int p_channel, 
+void AudioSpatializerInstance::mix_channel(Ref<SpatializerParameters> p_spatial_parameters, Ref<SpatializerPlaybackData> p_playback_data, int p_channel,
 		AudioFrame *p_output_buf, const AudioFrame *p_source_buf, int p_frame_count) {
 	GDVIRTUAL_CALL(_mix_channel, p_spatial_parameters, p_playback_data, p_channel, p_output_buf, p_source_buf, p_frame_count);
 }
@@ -294,7 +292,6 @@ void AudioSpatializerInstance::initialize_audio_player() {
 }
 
 void AudioSpatializerInstance::update_spatializer_parameters() {
-	
 	//print_verbose("Calculate new spatialization");
 	Ref<SpatializerParameters> new_parameters = calculate_spatialization();
 	//print_verbose("Done calculating new spatialization");
@@ -305,7 +302,7 @@ void AudioSpatializerInstance::update_spatializer_parameters() {
 		for (SpatialPlaybackListNode *playback_node : playback_list) {
 			for (int channel_idx = 0; channel_idx < playback_node->spatial_playbacks.size(); channel_idx++) {
 				Ref<AudioStreamPlayback> playback = playback_node->spatial_playbacks[channel_idx];
-				HashMap <StringName, Vector<AudioFrame>> bus_map = get_bus_map(new_parameters, channel_idx);
+				HashMap<StringName, Vector<AudioFrame>> bus_map = get_bus_map(new_parameters, channel_idx);
 				AudioServer::get_singleton()->set_playback_bus_volumes_linear(playback, bus_map);
 			}
 		}
@@ -313,31 +310,29 @@ void AudioSpatializerInstance::update_spatializer_parameters() {
 }
 
 HashMap<StringName, Vector<AudioFrame>> AudioSpatializerInstance::get_bus_map(const Ref<SpatializerParameters> p_params, int p_channel) {
-	
 	//print_verbose(vformat("AudioSpatializerInstance get_bus_map: channel %d", p_channel));
 
-    HashMap<StringName, Vector<AudioFrame>> bus_map;
-    ERR_FAIL_INDEX_V(p_channel, MAX_CHANNELS_PER_BUS, bus_map);
+	HashMap<StringName, Vector<AudioFrame>> bus_map;
+	ERR_FAIL_INDEX_V(p_channel, MAX_CHANNELS_PER_BUS, bus_map);
 
-    int idx = 0;
+	int idx = 0;
 	Dictionary bus_volumes = p_params->get_bus_volumes();
 	Vector<Vector2> mix_volumes = p_params->get_mix_volumes();
-	
-    for (StringName key : bus_volumes.get_key_list()) {
+
+	for (StringName key : bus_volumes.get_key_list()) {
 		if (idx >= MAX_BUSES_PER_PLAYBACK) {
 			break;
 		}
 
-        Vector<AudioFrame> volumes;
-	    volumes.resize(MAX_CHANNELS_PER_BUS);
+		Vector<AudioFrame> volumes;
+		volumes.resize(MAX_CHANNELS_PER_BUS);
 
 		Vector<Vector2> bus_volume = bus_volumes.get_valid(key);
-        bus_map[key] = volumes;
+		bus_map[key] = volumes;
 
 		if (should_mix_channels()) {
 			// Mix masked out volumes for specified channel:
 			for (int channel_idx = 0; channel_idx < MAX_CHANNELS_PER_BUS; channel_idx++) {
-				
 				float left = 0.0;
 				float right = 0.0;
 				if (channel_idx == p_channel) {
@@ -352,7 +347,7 @@ HashMap<StringName, Vector<AudioFrame>> AudioSpatializerInstance::get_bus_map(co
 					}
 				}
 
-				bus_map[key].write[channel_idx] = AudioFrame(left, right);	
+				bus_map[key].write[channel_idx] = AudioFrame(left, right);
 			}
 		} else {
 			// Not mixing channels ourselves, pass all mix volumes out for AudioServer to mix.
@@ -363,11 +358,10 @@ HashMap<StringName, Vector<AudioFrame>> AudioSpatializerInstance::get_bus_map(co
 
 		idx++;
 	}
-    return bus_map;
+	return bus_map;
 }
 
 void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
-	
 	// print_verbose("AudioSpatializerInstance _mix_from_playback_list: Start mixing stream playbacks");
 	Ref<SpatializerParameters> parameters = get_spatializer_parameters();
 	//print_verbose(vformat("Got parameters: %s", parameters.is_null() ? "null" : "valid"));
@@ -382,7 +376,7 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 			channel_buf[i] = AudioFrame(0.0, 0.0);
 		}
 	}
-	
+
 	int64_t buffer_lookahead_size = p_buffer_size + LOOKAHEAD_BUFFER_SIZE;
 	if (playback_buffer.size() < buffer_lookahead_size) {
 		playback_buffer.resize(buffer_lookahead_size);
@@ -403,20 +397,20 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 		if (playback->stream_playback->get_is_sample()) {
 			continue;
 		}
-		
+
 		// print_verbose("AudioSpatializerInstance _mix_from_playback_list: mixing playback");
-		
+
 		Ref<SpatializerPlaybackData> playback_data = playback->playback_data;
-		
+
 		AudioFrame *buf = playback_buffer.ptrw();
 
 		// Copy the old contents of the lookahead buffer into the beginning of the playback buffer.
 		for (int i = 0; i < LOOKAHEAD_BUFFER_SIZE; i++) {
 			buf[i] = playback->lookahead[i];
 		}
-		
+
 		float pitch_scale = parameters->get_pitch_scale();
-	
+
 		// Mix frame_count from the playback into the stored mixed_buffer for the playback
 		int mixed_frames = playback->stream_playback->mix(&buf[LOOKAHEAD_BUFFER_SIZE], pitch_scale, p_buffer_size);
 		mixed_frame_count += mixed_frames; // not sure this does what I want...
@@ -485,12 +479,12 @@ void AudioSpatializerInstance::_manage_playback_state() {
 			}
 			_delete_stream_playback_list_node(playback);
 		}
-		
+
 		// switch (playback->state.load()) {
 		// 	case SpatialPlaybackListNode::AWAITING_DELETION:
 		// 	case SpatialPlaybackListNode::FADE_OUT_TO_DELETION:
 		// 		// Remove the playback from the list.
-				
+
 		// 		break;
 		// 	case SpatialPlaybackListNode::FADE_OUT_TO_PAUSE: {
 		// 		// Pause the stream.
@@ -563,7 +557,7 @@ void AudioSpatializerInstance::set_audio_player(AudioStreamPlayerSpatial *p_audi
 	initialize_audio_player();
 }
 
-AudioStreamPlayerSpatial* AudioSpatializerInstance::get_audio_player() const {
+AudioStreamPlayerSpatial *AudioSpatializerInstance::get_audio_player() const {
 	return audio_player;
 }
 
@@ -618,7 +612,6 @@ AudioSpatializer::AudioSpatializer() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
 
 void AudioStreamPlaybackSpatial::start(double p_from_pos) {
 	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: start(%f) [%s]", channel, p_from_pos, active.is_set() ? "active" : "inactive"));

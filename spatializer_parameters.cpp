@@ -29,41 +29,41 @@
 /**************************************************************************/
 
 #include "spatializer_parameters.h"
-#include "servers/audio/audio_server.h"
 #include "audio_spatializer.h"
+#include "servers/audio/audio_server.h"
 
 void SpatializerParameters::add_bus_volume(const StringName p_bus, Vector<Vector2> p_volumes) {
-    ERR_FAIL_COND(p_volumes.size() != AudioServer::MAX_CHANNELS_PER_BUS);
-    bus_volumes[p_bus] = p_volumes;
+	ERR_FAIL_COND(p_volumes.size() != AudioServer::MAX_CHANNELS_PER_BUS);
+	bus_volumes[p_bus] = p_volumes;
 }
 
 Dictionary SpatializerParameters::get_bus_volumes() const {
-    return bus_volumes;
+	return bus_volumes;
 }
 
 void SpatializerParameters::set_mix_volumes(Vector<Vector2> p_volumes) {
-    ERR_FAIL_COND(p_volumes.size() != AudioServer::MAX_CHANNELS_PER_BUS);
-    mix_volumes = p_volumes;
+	ERR_FAIL_COND(p_volumes.size() != AudioServer::MAX_CHANNELS_PER_BUS);
+	mix_volumes = p_volumes;
 }
 
 Vector<Vector2> SpatializerParameters::get_mix_volumes() const {
-    return mix_volumes;
+	return mix_volumes;
 }
 
 void SpatializerParameters::set_pitch_scale(float p_pitch_scale) {
-    pitch_scale = p_pitch_scale;
+	pitch_scale = p_pitch_scale;
 }
 
 float SpatializerParameters::get_pitch_scale() const {
-    return pitch_scale;
+	return pitch_scale;
 }
 
 void SpatializerParameters::set_update_parameters(bool p_update) {
-    update_parameters = p_update;
+	update_parameters = p_update;
 }
 
 bool SpatializerParameters::should_update_parameters() const {
-    return update_parameters;
+	return update_parameters;
 }
 
 void SpatializerParameters::_bind_methods() {
@@ -75,7 +75,7 @@ void SpatializerParameters::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_pitch_scale", "pitch_scale"), &SpatializerParameters::set_pitch_scale);
 	ClassDB::bind_method(D_METHOD("get_pitch_scale"), &SpatializerParameters::get_pitch_scale);
-    
+
 	ClassDB::bind_method(D_METHOD("set_update_parameters", "update"), &SpatializerParameters::set_update_parameters);
 	ClassDB::bind_method(D_METHOD("should_update_parameters"), &SpatializerParameters::should_update_parameters);
 }

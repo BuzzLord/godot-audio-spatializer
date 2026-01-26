@@ -42,7 +42,6 @@
 #include "scene/3d/physics/area_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-
 void AudioStreamPlayerSpatial::_notification(int p_what) {
 	//print_verbose(vformat("AudioStreamPlayerSpatial _notification %d", p_what));
 	switch (p_what) {
@@ -53,7 +52,7 @@ void AudioStreamPlayerSpatial::_notification(int p_what) {
 				spatializer = spatializer_base->instantiate();
 				spatializer->set_audio_player(this);
 			}
-			
+
 			if (autoplay && !Engine::get_singleton()->is_editor_hint()) {
 				play(0.0);
 			}
@@ -67,13 +66,12 @@ void AudioStreamPlayerSpatial::_notification(int p_what) {
 
 		case NOTIFICATION_READY: {
 		} break;
-		
+
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 			notify_transform_changed();
 		} break;
 
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
-
 			// Update anything related to position first, if possible of course.
 			if (spatializer.is_valid() && (active.is_set() || setplay.get() > 0 || force_update_spatializer)) {
 				force_update_spatializer = false;
@@ -82,7 +80,7 @@ void AudioStreamPlayerSpatial::_notification(int p_what) {
 
 			if (spatializer.is_valid() && setplayback.is_valid() && setplay.get() >= 0) {
 				active.set();
-				
+
 				spatializer->start_playback_stream(setplayback, setplay.get());
 				setplayback.unref();
 				setplay.set(-1);
@@ -168,7 +166,7 @@ void AudioStreamPlayerSpatial::_update_stream_parameters() {
 		const PropertyInfo &pi = K.property;
 		StringName key = PARAM_PREFIX + pi.name;
 		if (!playback_parameters.has(key)) {
-			ParameterData pd = {pi.name, K.default_value};
+			ParameterData pd = { pi.name, K.default_value };
 			playback_parameters.insert(key, pd);
 		}
 	}
@@ -305,14 +303,13 @@ void AudioStreamPlayerSpatial::stop() {
 	if (spatializer.is_null()) {
 		return;
 	}
-	
+
 	//print_verbose("AudioStreamPlayerSpatial::stop")
 	setplay.set(-1);
 	_stop_basic();
 }
 
 void AudioStreamPlayerSpatial::_stop_basic() {
-	
 	//print_verbose("AudioStreamPlayerSpatial stop_basic");
 	for (Ref<AudioStreamPlayback> &playback : stream_playbacks) {
 		spatializer->stop_playback_stream(playback);
@@ -370,7 +367,6 @@ void AudioStreamPlayerSpatial::_set_playing(bool p_enable) {
 		stop();
 	}
 }
-
 
 void AudioStreamPlayerSpatial::set_stream_paused(bool p_pause) {
 	if (spatializer.is_null()) {
@@ -504,7 +500,6 @@ Ref<AudioSpatializer> AudioStreamPlayerSpatial::get_spatializer() const {
 }
 
 void AudioStreamPlayerSpatial::_bind_methods() {
-
 	ClassDB::bind_method(D_METHOD("set_spatializer", "spatializer"), &AudioStreamPlayerSpatial::set_spatializer);
 	ClassDB::bind_method(D_METHOD("get_spatializer"), &AudioStreamPlayerSpatial::get_spatializer);
 
@@ -571,7 +566,7 @@ void AudioStreamPlayerSpatial::notify_transform_changed() {
 
 void AudioStreamPlayerSpatial::add_transform_changed_callback(AudioCallback p_callback, void *p_userdata) {
 	set_notify_transform(true);
-	
+
 	CallbackItem *ci = new CallbackItem();
 	ci->callback = p_callback;
 	ci->userdata = p_userdata;

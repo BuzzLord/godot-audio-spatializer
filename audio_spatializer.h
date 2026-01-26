@@ -32,9 +32,8 @@
 
 #include "servers/audio/audio_stream.h"
 
-#include "spatializer_parameters.h"
 #include "audio_stream_player_spatial.h"
-
+#include "spatializer_parameters.h"
 
 class AudioSpatializer;
 class AudioStreamPlaybackSpatial;
@@ -45,14 +44,13 @@ class AudioSpatializerInstance : public RefCounted {
 
 public:
 	enum {
-		MAX_CHANNELS_PER_BUS = 4,  // Should match AudioServer::MAX_CHANNELS_PER_BUS
+		MAX_CHANNELS_PER_BUS = 4, // Should match AudioServer::MAX_CHANNELS_PER_BUS
 		LOOKAHEAD_BUFFER_SIZE = 64,
-        MAX_BUSES_PER_PLAYBACK = 6,
+		MAX_BUSES_PER_PLAYBACK = 6,
 		MAX_INTERSECT_AREAS = 32,
-    };
+	};
 
 private:
-
 	struct SpatialPlaybackListNode {
 		// The state machine for audio stream playbacks is as follows:
 		// 1. The playback is created and added to the playback list in the playing state.
@@ -98,7 +96,7 @@ private:
 	Mutex mutex;
 
 	SpatialPlaybackListNode *_find_playback_list_node(Ref<AudioStreamPlayback> p_playback);
-	
+
 	void _delete_stream_playback_list_node(SpatialPlaybackListNode *p_playback_node);
 
 	void _mix_from_playback_list(int p_buffer_size);
@@ -111,7 +109,6 @@ private:
 	void set_spatializer_parameters(Ref<SpatializerParameters> p_parameters);
 
 protected:
-
 	GDVIRTUAL0R_REQUIRED(Ref<SpatializerParameters>, _calculate_spatialization)
 	GDVIRTUAL0R(Ref<SpatializerPlaybackData>, _instantiate_playback_data)
 
@@ -120,11 +117,11 @@ protected:
 
 	GDVIRTUAL0RC(bool, _should_mix_channels)
 	GDVIRTUAL6(_mix_channel, Ref<SpatializerParameters>, Ref<SpatializerPlaybackData>, int, GDExtensionPtr<AudioFrame>, GDExtensionConstPtr<AudioFrame>, int)
-	
+
 	GDVIRTUAL0(_initialize_audio_player)
-	
+
 	static void _bind_methods();
-	
+
 	void init_channels_and_buffers();
 
 public:
@@ -159,7 +156,6 @@ public:
 	virtual void initialize_audio_player();
 };
 
-
 class AudioSpatializer : public Resource {
 	GDCLASS(AudioSpatializer, Resource);
 
@@ -171,7 +167,6 @@ public:
 	virtual Ref<AudioSpatializerInstance> instantiate();
 	AudioSpatializer();
 };
-
 
 class AudioStreamPlaybackSpatial : public AudioStreamPlayback {
 	GDCLASS(AudioStreamPlaybackSpatial, AudioStreamPlayback);
@@ -186,7 +181,6 @@ protected:
 	// static void _bind_methods();
 
 public:
-
 	virtual void start(double p_from_pos = 0.0) override;
 	virtual void stop() override;
 	virtual bool is_playing() const override;

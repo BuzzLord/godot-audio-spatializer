@@ -44,7 +44,6 @@
 #include "scene/3d/physics/area_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-
 static const Vector3 default_speaker_directions[7] = {
 	Vector3(-1.0, 0.0, -1.0).normalized(), // front-left
 	Vector3(1.0, 0.0, -1.0).normalized(), // front-right
@@ -140,7 +139,6 @@ float AudioSpatializerInstance3D::get_attenuation_db(float p_distance) const {
 	return att;
 }
 
-
 #ifndef PHYSICS_3D_DISABLED
 void AudioSpatializerInstance3D::calc_reverb_vol(Area3D *area, Vector3 listener_area_pos, Vector<Vector2> direct_path_vol, Vector<Vector2> &reverb_vol) {
 	reverb_vol.resize(MAX_CHANNELS_PER_BUS);
@@ -212,13 +210,11 @@ void AudioSpatializerInstance3D::calc_reverb_vol(Area3D *area, Vector3 listener_
 }
 #endif // PHYSICS_3D_DISABLED
 
-
 Ref<SpatializerPlaybackData> AudioSpatializerInstance3D::instantiate_playback_data() {
 	Ref<SpatializerPlaybackData3D> playback_data;
 	playback_data.instantiate();
 	return playback_data;
 }
-
 
 #ifndef PHYSICS_3D_DISABLED
 // Interacts with PhysicsServer3D, so can only be called during _physics_process
@@ -282,7 +278,6 @@ static void _apply_max_volume(Vector<Vector2> &r_tgt_volume_vector, const Vector
 	}
 }
 
-
 static float _get_max_volume(const Vector<Vector2> &p_src_volume) {
 	float max_vol = 0.0;
 	for (int64_t i = 0; i < p_src_volume.size(); i++) {
@@ -300,7 +295,7 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 
 	Ref<World3D> world_3d = get_audio_player()->get_world_3d();
 	ERR_FAIL_COND_V(world_3d.is_null(), parameters);
-	
+
 	parameters.instantiate();
 
 	HashSet<Camera3D *> cameras = world_3d->get_cameras();
@@ -311,23 +306,23 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 	Area3D *area = _get_overriding_area();
 #endif // PHYSICS_3D_DISABLED
 
-    Vector3 linear_velocity;
-    if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
-        linear_velocity = velocity_tracker->get_tracked_linear_velocity();
-    }
+	Vector3 linear_velocity;
+	if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
+		linear_velocity = velocity_tracker->get_tracked_linear_velocity();
+	}
 
 	float log_pitch_scale = 0.0;
 	float log_pitch_weight = 0.0;
 
-    Vector<Vector2> output_volume;
+	Vector<Vector2> output_volume;
 	output_volume.resize(volume_vector_size);
 
-    Vector<Vector2> reverb_volume;
+	Vector<Vector2> reverb_volume;
 	reverb_volume.resize(volume_vector_size);
 
 	for (int i = 0; i < volume_vector_size; i++) {
 		output_volume.write[i] = Vector2(0, 0);
-        reverb_volume.write[i] = Vector2(0, 0);
+		reverb_volume.write[i] = Vector2(0, 0);
 	}
 
 	Vector<Vector2> tmp_volume;
@@ -360,7 +355,7 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 		const Vector3 local_pos = listener_node->get_global_transform().orthonormalized().affine_inverse().xform(global_pos);
 
 		const float dist = local_pos.length();
-        
+
 #ifndef PHYSICS_3D_DISABLED
 		Vector3 area_sound_pos;
 		Vector3 listener_area_pos;
@@ -370,10 +365,10 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 			listener_area_pos = listener_node->get_global_transform().affine_inverse().xform(area_sound_pos);
 		}
 #endif // PHYSICS_3D_DISABLED
-		
+
 		// Vector<Vector2> output_volume_vector;
 		// output_volume_vector.resize(AudioServer::MAX_CHANNELS_PER_BUS);
-        
+
 		float multiplier = Math::db_to_linear(get_attenuation_db(dist));
 
 		if (base->max_distance > 0) {
@@ -405,7 +400,7 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 		parameters->set_linear_attenuation(Math::db_to_linear(db_att));
 		parameters->set_attenuation_filter_cutoff_hz(base->get_attenuation_filter_cutoff_hz());
 
-        for (Vector2 &frame : tmp_volume) {
+		for (Vector2 &frame : tmp_volume) {
 			frame = Vector2(0, 0);
 		}
 
@@ -431,7 +426,6 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 #endif
 
 		if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
-
 			Vector3 listener_velocity;
 
 			if (listener) {
@@ -456,48 +450,48 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 		}
 	}
 
-    if (log_pitch_weight > 0) {
-        parameters->set_pitch_scale(Math::pow(2.0f, log_pitch_scale / log_pitch_weight));
-    } else {
-        parameters->set_pitch_scale(get_audio_player()->get_pitch_scale());
-    }
+	if (log_pitch_weight > 0) {
+		parameters->set_pitch_scale(Math::pow(2.0f, log_pitch_scale / log_pitch_weight));
+	} else {
+		parameters->set_pitch_scale(get_audio_player()->get_pitch_scale());
+	}
 
-    //HashMap<StringName, Vector<Vector2>> bus_volumes;
+	//HashMap<StringName, Vector<Vector2>> bus_volumes;
 	if (has_any_listener_in_range) {
 #ifndef PHYSICS_3D_DISABLED
 		if (area) {
 			if (area->is_overriding_audio_bus()) {
 				//override audio bus
 				//bus_volumes[area->get_audio_bus_name()] = output_volume;
-                parameters->add_bus_volume(area->get_audio_bus_name(), output_volume);
+				parameters->add_bus_volume(area->get_audio_bus_name(), output_volume);
 			} else {
-                // I think this is supposed to direct to main bus if area override isn't enabled (GH-104382)
-                parameters->add_bus_volume(get_audio_player()->get_bus(), output_volume);
-            }
+				// I think this is supposed to direct to main bus if area override isn't enabled (GH-104382)
+				parameters->add_bus_volume(get_audio_player()->get_bus(), output_volume);
+			}
 
 			if (area->is_using_reverb_bus()) {
 				// StringName reverb_bus_name = area->get_reverb_bus_name();
 				// bus_volumes[reverb_bus_name] = reverb_volume;
-                parameters->add_bus_volume(area->get_reverb_bus_name(), reverb_volume);
+				parameters->add_bus_volume(area->get_reverb_bus_name(), reverb_volume);
 			}
 		} else
 #endif // PHYSICS_3D_DISABLED
 		{
 			//bus_volumes[bus] = output_volume;
-            //bus_volumes[get_audio_player()->get_bus()] = output_volume;
-            parameters->add_bus_volume(get_audio_player()->get_bus(), output_volume);
+			//bus_volumes[get_audio_player()->get_bus()] = output_volume;
+			parameters->add_bus_volume(get_audio_player()->get_bus(), output_volume);
 		}
 	}
-    
-    parameters->set_mix_volumes(output_volume);
 
-    // if no listeners are in range and this was the case last frame, then we can skip setting any audio
+	parameters->set_mix_volumes(output_volume);
+
+	// if no listeners are in range and this was the case last frame, then we can skip setting any audio
 	const bool skip_setting_volumes = !has_any_listener_in_range && was_further_than_max_distance_last_frame;
 	was_further_than_max_distance_last_frame = !has_any_listener_in_range;
 
 	if (!skip_setting_volumes) {
-        // Want to update parameters that are sent to AudioServer, since they changed
-        parameters->set_update_parameters(true);
+		// Want to update parameters that are sent to AudioServer, since they changed
+		parameters->set_update_parameters(true);
 
 		// for (Ref<AudioStreamPlayback> &playback : internal->stream_playbacks) {
 		// 	AudioServer::get_singleton()->set_playback_bus_volumes_linear(playback, bus_volumes);
@@ -517,9 +511,8 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 	return parameters;
 }
 
-void AudioSpatializerInstance3D::process_frames(Ref<SpatializerParameters> p_parameters, Ref<SpatializerPlaybackData> p_playback_data, 
-        AudioFrame *p_output_buf, const AudioFrame *p_source_buf, int p_frame_count) {
-
+void AudioSpatializerInstance3D::process_frames(Ref<SpatializerParameters> p_parameters, Ref<SpatializerPlaybackData> p_playback_data,
+		AudioFrame *p_output_buf, const AudioFrame *p_source_buf, int p_frame_count) {
 	ERR_FAIL_COND_MSG(!Object::cast_to<SpatializerParameters3D>(*p_parameters), "Unexpected SpatializerParameters type; expected SpatializerParameters3D");
 	ERR_FAIL_COND_MSG(!Object::cast_to<SpatializerPlaybackData3D>(*p_playback_data), "Unexpected SpatializerPlaybackData type; expected SpatializerPlaybackData3D");
 
@@ -538,10 +531,10 @@ void AudioSpatializerInstance3D::process_frames(Ref<SpatializerParameters> p_par
 		filter.set_resonance(1);
 		filter.set_stages(1);
 		filter.set_gain(highshelf_gain);
-		
+
 		AudioFilterSW::Processor *processor_l = playback_data->get_filter_processor(0, true);
 		AudioFilterSW::Processor *processor_r = playback_data->get_filter_processor(0, false);
-		
+
 		ERR_FAIL_NULL(processor_l);
 		ERR_FAIL_NULL(processor_r);
 
@@ -590,7 +583,7 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 	Ref<SpatializerPlaybackData3D> playback_data = Ref<SpatializerPlaybackData3D>(Object::cast_to<SpatializerPlaybackData3D>(*p_playback_data));
 
 	Vector<Vector2> volumes = parameters->get_mix_volumes();
-	
+
 	AudioFrame p_vol_start = AudioFrame(playback_data->get_prev_mix_volume(p_channel));
 	AudioFrame p_vol_final = AudioFrame(volumes[p_channel]);
 
@@ -603,10 +596,10 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 		filter.set_resonance(1);
 		filter.set_stages(1);
 		filter.set_gain(highshelf_gain);
-		
+
 		AudioFilterSW::Processor *processor_l = playback_data->get_filter_processor(p_channel, true);
 		AudioFilterSW::Processor *processor_r = playback_data->get_filter_processor(p_channel, false);
-		
+
 		ERR_FAIL_NULL(processor_l);
 		ERR_FAIL_NULL(processor_r);
 
@@ -627,7 +620,6 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 		}
 
 	} else {
-		
 		for (int frame_idx = 0; frame_idx < p_frame_count; frame_idx++) {
 			// TODO: Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
 			float lerp_param = (float)frame_idx / p_frame_count;
@@ -640,12 +632,12 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 }
 
 void AudioSpatializerInstance3D::initialize_audio_player() {
-    if (!get_audio_player()) {
-        return;
-    }
+	if (!get_audio_player()) {
+		return;
+	}
 
 	if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
-        get_audio_player()->add_transform_changed_callback(_transform_changed_cb, this);
+		get_audio_player()->add_transform_changed_callback(_transform_changed_cb, this);
 		velocity_tracker->set_track_physics_step(base->doppler_tracking == AudioSpatializer3D::DOPPLER_TRACKING_PHYSICS_STEP);
 		if (get_audio_player()->is_inside_tree()) {
 			velocity_tracker->reset(get_audio_player()->get_global_transform().origin);
@@ -654,32 +646,32 @@ void AudioSpatializerInstance3D::initialize_audio_player() {
 }
 
 void AudioSpatializerInstance3D::update_doppler_tracked_velocity() {
-    if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
-        velocity_tracker->update_position(get_audio_player()->get_global_transform().origin);
-    }
+	if (base->doppler_tracking != AudioSpatializer3D::DOPPLER_TRACKING_DISABLED) {
+		velocity_tracker->update_position(get_audio_player()->get_global_transform().origin);
+	}
 }
 
 AudioSpatializerInstance3D::AudioSpatializerInstance3D() {
-    velocity_tracker.instantiate();
+	velocity_tracker.instantiate();
 	cached_global_panning_strength = GLOBAL_GET_CACHED(float, "audio/general/3d_panning_strength");
 }
 
 AudioSpatializerInstance3D::~AudioSpatializerInstance3D() {
-    if (get_audio_player()) {
-        get_audio_player()->remove_transform_changed_callback(_transform_changed_cb, this);
-    }
-    velocity_tracker.unref();
+	if (get_audio_player()) {
+		get_audio_player()->remove_transform_changed_callback(_transform_changed_cb, this);
+	}
+	velocity_tracker.unref();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 Ref<AudioSpatializerInstance> AudioSpatializer3D::instantiate() {
-    Ref<AudioSpatializerInstance3D> ins;
-    ins.instantiate();
-    ins->base = Ref<AudioSpatializer3D>(this);
+	Ref<AudioSpatializerInstance3D> ins;
+	ins.instantiate();
+	ins->base = Ref<AudioSpatializer3D>(this);
 	ins->mix_channel_mode = mix_channel_mode;
 	//ins->init_channels_and_buffers();
-    return ins;
+	return ins;
 }
 
 void AudioSpatializer3D::set_mix_channel_mode(bool p_mode) {
@@ -796,7 +788,6 @@ float AudioSpatializer3D::get_doppler_speed_of_sound() const {
 }
 
 void AudioSpatializer3D::_bind_methods() {
-
 	ClassDB::bind_method(D_METHOD("set_mix_channel_mode", "mode"), &AudioSpatializer3D::set_mix_channel_mode);
 	ClassDB::bind_method(D_METHOD("get_mix_channel_mode"), &AudioSpatializer3D::get_mix_channel_mode);
 
@@ -835,20 +826,20 @@ void AudioSpatializer3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_doppler_speed_of_sound", "speed"), &AudioSpatializer3D::set_doppler_speed_of_sound);
 	ClassDB::bind_method(D_METHOD("get_doppler_speed_of_sound"), &AudioSpatializer3D::get_doppler_speed_of_sound);
-	
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "mix_channel_mode"), "set_mix_channel_mode", "get_mix_channel_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "attenuation_model", PROPERTY_HINT_ENUM, "Inverse,Inverse Square,Logarithmic,Disabled"), "set_attenuation_model", "get_attenuation_model");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "unit_size", PROPERTY_HINT_RANGE, "0.1,100,0.01,or_greater"), "set_unit_size", "get_unit_size");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance", PROPERTY_HINT_RANGE, "0,4096,0.01,or_greater,suffix:m"), "set_max_distance", "get_max_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "panning_strength", PROPERTY_HINT_RANGE, "0,3,0.01,or_greater"), "set_panning_strength", "get_panning_strength");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "area_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_area_mask", "get_area_mask");
-	
-    ADD_GROUP("Emission Angle", "emission_angle");
+
+	ADD_GROUP("Emission Angle", "emission_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emission_angle_enabled", PROPERTY_HINT_GROUP_ENABLE), "set_emission_angle_enabled", "is_emission_angle_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "emission_angle_degrees", PROPERTY_HINT_RANGE, "0.1,90,0.1,degrees"), "set_emission_angle", "get_emission_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "emission_angle_filter_attenuation_db", PROPERTY_HINT_RANGE, "-80,0,0.1,suffix:dB"), "set_emission_angle_filter_attenuation_db", "get_emission_angle_filter_attenuation_db");
-	
-    ADD_GROUP("Attenuation Filter", "attenuation_filter_");
+
+	ADD_GROUP("Attenuation Filter", "attenuation_filter_");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "attenuation_filter_cutoff_hz", PROPERTY_HINT_RANGE, "1,20500,1,suffix:Hz"), "set_attenuation_filter_cutoff_hz", "get_attenuation_filter_cutoff_hz");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "attenuation_filter_db", PROPERTY_HINT_RANGE, "-80,0,0.1,suffix:dB"), "set_attenuation_filter_db", "get_attenuation_filter_db");
 
@@ -877,19 +868,19 @@ AudioSpatializer3D::~AudioSpatializer3D() {
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void SpatializerParameters3D::set_linear_attenuation(float p_att) {
-    linear_attenuation = p_att;
+	linear_attenuation = p_att;
 }
 
 float SpatializerParameters3D::get_linear_attenuation() const {
-    return linear_attenuation;
+	return linear_attenuation;
 }
 
 void SpatializerParameters3D::set_attenuation_filter_cutoff_hz(float p_cutoff) {
-    attenuation_filter_cutoff_hz = p_cutoff;
+	attenuation_filter_cutoff_hz = p_cutoff;
 }
 
 float SpatializerParameters3D::get_attenuation_filter_cutoff_hz() const {
-    return attenuation_filter_cutoff_hz;
+	return attenuation_filter_cutoff_hz;
 }
 
 void SpatializerParameters3D::_bind_methods() {
@@ -903,26 +894,26 @@ void SpatializerParameters3D::_bind_methods() {
 ///////////////////////////////////////////////////////////////////////////////
 
 void SpatializerPlaybackData3D::set_prev_mix_volume(int p_channel, Vector2 p_volume) {
-    if (prev_mix_volumes.size() <= p_channel) {
+	if (prev_mix_volumes.size() <= p_channel) {
 		prev_mix_volumes.resize(p_channel + 1);
 	}
-    prev_mix_volumes.write[p_channel] = p_volume;
+	prev_mix_volumes.write[p_channel] = p_volume;
 }
 
 Vector2 SpatializerPlaybackData3D::get_prev_mix_volume(int p_channel) const {
 	if (prev_mix_volumes.size() <= p_channel) {
 		return Vector2(0.0, 0.0);
 	}
-    return prev_mix_volumes[p_channel];
+	return prev_mix_volumes[p_channel];
 }
 
 AudioFilterSW::Processor *SpatializerPlaybackData3D::get_filter_processor(int p_channel, bool left) {
-    ERR_FAIL_INDEX_V(p_channel, 4, nullptr);
-    if (left) {
-        return &filter_processors[p_channel * 2];
-    } else {
-        return &filter_processors[p_channel * 2 + 1];
-    }
+	ERR_FAIL_INDEX_V(p_channel, 4, nullptr);
+	if (left) {
+		return &filter_processors[p_channel * 2];
+	} else {
+		return &filter_processors[p_channel * 2 + 1];
+	}
 }
 
 void SpatializerPlaybackData3D::_bind_methods() {

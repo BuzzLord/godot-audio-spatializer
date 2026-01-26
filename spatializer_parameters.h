@@ -40,35 +40,32 @@ class SpatializerParameters : public RefCounted {
 	GDCLASS(SpatializerParameters, RefCounted);
 
 private:
-    
-    // Dictionary of bus -> volume vectors to output. Volumes will be divided by mix_volumes before sending to AudioServer, to account for mixing done in AudioSpatializer.
-    Dictionary bus_volumes;
-    // Vector of volumes (size 4) that should be used by AudioSpatializer to mix the audio frames to, for each channel.
-    Vector<Vector2> mix_volumes;
-    // Pitch scale used when mixing frames from the stream playback.
-    float pitch_scale;
-    // Should be set to true if volumes were updated; will cause AudioServer to update the volumes. Useful when sound is outside max_distance, and you don't want to keep updating an empty set of bus volumes.
-    bool update_parameters = false;
+	// Dictionary of bus -> volume vectors to output. Volumes will be divided by mix_volumes before sending to AudioServer, to account for mixing done in AudioSpatializer.
+	Dictionary bus_volumes;
+	// Vector of volumes (size 4) that should be used by AudioSpatializer to mix the audio frames to, for each channel.
+	Vector<Vector2> mix_volumes;
+	// Pitch scale used when mixing frames from the stream playback.
+	float pitch_scale;
+	// Should be set to true if volumes were updated; will cause AudioServer to update the volumes. Useful when sound is outside max_distance, and you don't want to keep updating an empty set of bus volumes.
+	bool update_parameters = false;
 
 protected:
 	static void _bind_methods();
 
 public:
+	void add_bus_volume(const StringName p_bus, Vector<Vector2> p_volumes);
+	Dictionary get_bus_volumes() const;
 
-    void add_bus_volume(const StringName p_bus, Vector<Vector2> p_volumes);
-    Dictionary get_bus_volumes() const;
+	void set_mix_volumes(Vector<Vector2> p_volumes);
+	Vector<Vector2> get_mix_volumes() const;
 
-    void set_mix_volumes(Vector<Vector2> p_volumes);
-    Vector<Vector2> get_mix_volumes() const;
+	void set_pitch_scale(float p_pitch_scale);
+	float get_pitch_scale() const;
 
-    void set_pitch_scale(float p_pitch_scale);
-    float get_pitch_scale() const;
-
-    void set_update_parameters(bool p_update);
-    bool should_update_parameters() const;
+	void set_update_parameters(bool p_update);
+	bool should_update_parameters() const;
 };
 
 class SpatializerPlaybackData : public RefCounted {
 	GDCLASS(SpatializerPlaybackData, RefCounted);
-
 };
