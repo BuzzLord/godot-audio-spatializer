@@ -413,7 +413,13 @@ void AudioStreamPlayerSpatial::set_bus(const StringName &p_bus) {
 }
 
 StringName AudioStreamPlayerSpatial::get_bus() const {
-	return bus;
+	const String bus_name = bus;
+	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
+		if (AudioServer::get_singleton()->get_bus_name(i) == bus_name) {
+			return bus;
+		}
+	}
+	return SceneStringName(Master);
 }
 
 void AudioStreamPlayerSpatial::set_max_polyphony(int p_max_polyphony) {
@@ -470,36 +476,18 @@ void AudioStreamPlayerSpatial::_validate_property(PropertyInfo &p_property) cons
 	if (!Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
-	
-	// if (p_property.name == "spatializer") {
-	// 	String options;
-	// 	int options_appended = 0;
-	// 	for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
-	// 		if (AudioServer::get_singleton()->get_bus_effect_count(i) == 0) {
-	// 			continue;
-	// 		}
-	// 		for (int j = 0; j < AudioServer::get_singleton()->get_bus_effect_count(i); j++) {
-	// 			Ref<AudioEffect> effect = AudioServer::get_singleton()->get_bus_effect(i, j);
-	// 			if (effect.is_null()) {
-	// 				continue;
-	// 			}
-	// 			if (Object::cast_to<AudioEffectSpatializer>(*effect)) {
-	// 				// Strip off AudioEffect from class name
-	// 				String effect_type = String(effect->get_class_name()).substr(11);
-	// 				String bus_name = AudioServer::get_singleton()->get_bus_name(i);
-	// 				String name = effect_type + " (" + bus_name + ")";
-					
-	// 				if (options_appended > 0) {
-	// 					options += ",";
-	// 				}
-	// 				options_appended++;
-	// 				options += name;
-	// 			}
-	// 		}
-	// 	}
+	if (p_property.name == "bus") {
+		String options;
+		for (int i = 0; i < AudioServer::get_singleton()->get_bus_count(); i++) {
+			if (i > 0) {
+				options += ",";
+			}
+			String name = AudioServer::get_singleton()->get_bus_name(i);
+			options += name;
+		}
 
-	// 	p_property.hint_string = options;
-	// }
+		p_property.hint_string = options;
+	}
 }
 
 void AudioStreamPlayerSpatial::set_spatializer(Ref<AudioSpatializer> p_spatializer) {
@@ -550,6 +538,9 @@ void AudioStreamPlayerSpatial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_stream_paused", "pause"), &AudioStreamPlayerSpatial::set_stream_paused);
 	ClassDB::bind_method(D_METHOD("get_stream_paused"), &AudioStreamPlayerSpatial::get_stream_paused);
 
+	ClassDB::bind_method(D_METHOD("set_bus", "bus"), &AudioStreamPlayerSpatial::set_bus);
+	ClassDB::bind_method(D_METHOD("get_bus"), &AudioStreamPlayerSpatial::get_bus);
+
 	ClassDB::bind_method(D_METHOD("set_max_polyphony", "max_polyphony"), &AudioStreamPlayerSpatial::set_max_polyphony);
 	ClassDB::bind_method(D_METHOD("get_max_polyphony"), &AudioStreamPlayerSpatial::get_max_polyphony);
 
@@ -565,9 +556,10 @@ void AudioStreamPlayerSpatial::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autoplay"), "set_autoplay", "is_autoplay_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "stream_paused", PROPERTY_HINT_NONE, ""), "set_stream_paused", "get_stream_paused");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_polyphony", PROPERTY_HINT_NONE, ""), "set_max_polyphony", "get_max_polyphony");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "bus", PROPERTY_HINT_ENUM, ""), "set_bus", "get_bus");
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "spatializer", PROPERTY_HINT_RESOURCE_TYPE, "AudioSpatializer"), "set_spatializer", "get_spatializer");
-	
+
 	ADD_SIGNAL(MethodInfo("finished"));
 }
 
@@ -602,9 +594,13 @@ void AudioStreamPlayerSpatial::remove_transform_changed_callback(AudioCallback p
 
 AudioStreamPlayerSpatial::AudioStreamPlayerSpatial() {
 	//internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayerSpatial::play), callable_mp(this, &AudioStreamPlayerSpatial::stop), true));
-	
+
 	set_disable_scale(true);
 	//cached_global_panning_strength = GLOBAL_GET_CACHED(float, "audio/general/3d_panning_strength");
+
+	bus = SceneStringName(Master);
+	AudioServer::get_singleton()->connect("bus_layout_changed", callable_mp((Object *)this, &Object::notify_property_list_changed));
+	AudioServer::get_singleton()->connect("bus_renamed", callable_mp((Object *)this, &Object::notify_property_list_changed).unbind(3));
 }
 
 AudioStreamPlayerSpatial::~AudioStreamPlayerSpatial() {
