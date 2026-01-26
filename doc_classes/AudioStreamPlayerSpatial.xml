@@ -56,6 +56,8 @@
 		<member name="autoplay" type="bool" setter="set_autoplay" getter="is_autoplay_enabled" default="false">
 			If [code]true[/code], audio plays when the AudioStreamPlayer3D node is added to scene tree.
 		</member>
+		<member name="bus" type="StringName" setter="set_bus" getter="get_bus" default="&amp;&quot;Master&quot;">
+		</member>
 		<member name="max_db" type="float" setter="set_max_db" getter="get_max_db" default="3.0">
 			Sets the absolute maximum of the sound level, in decibels.
 		</member>

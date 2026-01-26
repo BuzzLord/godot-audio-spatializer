@@ -54,5 +54,10 @@
 			<description>
 			</description>
 		</method>
+		<method name="get_audio_player" qualifiers="const">
+			<return type="AudioStreamPlayerSpatial" />
+			<description>
+			</description>
+		</method>
 	</methods>
 </class>
