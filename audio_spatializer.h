@@ -41,6 +41,7 @@ class AudioStreamPlaybackSpatial;
 class AudioSpatializerInstance : public RefCounted {
 	GDCLASS(AudioSpatializerInstance, RefCounted);
 	friend class AudioStreamPlayerSpatial;
+	friend class AudioStreamPlaybackSpatial;
 
 public:
 	enum {
@@ -76,16 +77,19 @@ private:
 		SafeFlag active;
 		// The next few samples are stored here so we have some time to fade audio out if it ends abruptly at the beginning of the next mix.
 		AudioFrame lookahead[LOOKAHEAD_BUFFER_SIZE];
-		// Stores per-channel stream playbacks that are passed to AudioServer; should be up to 4, one per channel (depending on AudioServer::get_channel_count()).
-		Vector<Ref<AudioStreamPlaybackSpatial>> spatial_playbacks;
 	};
 
 	uint64_t mixed_frame_count = 0;
 
 	SafeList<SpatialPlaybackListNode *> playback_list;
 
+	// Stores per-channel stream playbacks that are passed to AudioServer; should be up to 4, one per channel (depending on AudioServer::get_channel_count()).
+	Vector<Ref<AudioStreamPlaybackSpatial>> spatial_playbacks;
+
 	AudioStreamPlayerSpatial *audio_player;
 	Ref<SpatializerParameters> spatializer_parameters;
+
+	SafeFlag playback_active;
 
 	Vector<AudioFrame> playback_buffer;
 	Vector<AudioFrame> process_buffer;
@@ -133,10 +137,10 @@ public:
 	//void start_playback_stream(Ref<AudioStreamPlayback> p_playback, const HashMap<StringName, Vector<AudioFrame>> &p_bus_volumes, float p_start_time);
 	void start_playback_stream(Ref<AudioStreamPlayback> p_playback, float p_start_time);
 	void stop_playback_stream(Ref<AudioStreamPlayback> p_playback);
-	void set_playback_paused(Ref<AudioStreamPlayback> p_playback, bool p_paused);
+	void set_playback_paused(bool p_paused);
 	bool is_playback_active(Ref<AudioStreamPlayback> p_playback);
 	float get_playback_position(Ref<AudioStreamPlayback> p_playback);
-	bool is_playback_paused(Ref<AudioStreamPlayback> p_playback);
+	bool is_playback_paused();
 
 	// Called from Audio Thread: AudioStreamSpatialPlayback.mix()
 	void get_mixed_frames(int p_channel, AudioFrame *p_frames, int p_frame_count);
@@ -175,7 +179,6 @@ class AudioStreamPlaybackSpatial : public AudioStreamPlayback {
 	SafeFlag active;
 	int channel;
 	AudioSpatializerInstance *spatializer;
-	Ref<AudioStreamPlayback> stream_playback;
 
 protected:
 	// static void _bind_methods();

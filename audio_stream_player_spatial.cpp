@@ -123,7 +123,7 @@ void AudioStreamPlayerSpatial::process_playbacks() {
 	}
 	Vector<Ref<AudioStreamPlayback>> playbacks_to_remove;
 	for (Ref<AudioStreamPlayback> &playback : stream_playbacks) {
-		if (playback.is_valid() && !spatializer->is_playback_active(playback) && !spatializer->is_playback_paused(playback)) {
+		if (playback.is_valid() && !spatializer->is_playback_active(playback)) {
 			playbacks_to_remove.push_back(playback);
 		}
 	}
@@ -372,13 +372,7 @@ void AudioStreamPlayerSpatial::set_stream_paused(bool p_pause) {
 	if (spatializer.is_null()) {
 		return;
 	}
-	// TODO this does not have perfect recall, fix that maybe? If there are zero playbacks registered with the AudioServer, this bool isn't persisted.
-	for (Ref<AudioStreamPlayback> &playback : stream_playbacks) {
-		spatializer->set_playback_paused(playback, p_pause);
-		// if (_is_sample() && playback->get_sample_playback().is_valid()) {
-		// 	AudioServer::get_singleton()->set_sample_playback_pause(playback->get_sample_playback(), p_pause);
-		// }
-	}
+	spatializer->set_playback_paused(p_pause);
 }
 
 bool AudioStreamPlayerSpatial::get_stream_paused() const {
@@ -387,7 +381,7 @@ bool AudioStreamPlayerSpatial::get_stream_paused() const {
 	}
 	// There's currently no way to pause some playback streams but not others. Check the first and don't bother looking at the rest.
 	if (!stream_playbacks.is_empty()) {
-		return spatializer->is_playback_paused(stream_playbacks[0]);
+		return spatializer->is_playback_paused();
 	}
 	return false;
 }

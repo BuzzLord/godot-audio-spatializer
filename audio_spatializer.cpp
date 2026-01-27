@@ -67,28 +67,37 @@ void AudioSpatializerInstance::start_playback_stream(Ref<AudioStreamPlayback> p_
 	playback_node->active.set();
 	playback_node->playback_data = instantiate_playback_data();
 
-	//print_verbose("AudioSpatializerInstance start_playback_stream: set active and playback data instantiated");
-
-	int count = channel_count.get();
-
-	playback_node->spatial_playbacks.resize(count);
-	for (int channel_idx = 0; channel_idx < count; channel_idx++) {
-		Ref<AudioStreamPlaybackSpatial> spatial_playback;
-		spatial_playback.instantiate();
-		spatial_playback->active.set();
-		spatial_playback->stream_playback = p_playback;
-		spatial_playback->channel = channel_idx;
-		spatial_playback->spatializer = this;
-		playback_node->spatial_playbacks.write[channel_idx] = spatial_playback;
-		AudioServer::get_singleton()->start_playback_stream(spatial_playback, get_bus_map(params, channel_idx));
-	}
+	// print_verbose("AudioSpatializerInstance start_playback_stream: set active and playback data instantiated");
 
 	playback_list.insert(playback_node);
+
+	if (!playback_active.is_set()) {
+		playback_active.set();
+
+		for (bool &is_mixed : channel_mixed) {
+			is_mixed = true;
+		}
+
+		// print_verbose("AudioSpatializerInstance start_playback_stream: playback_active was false, create spatial_playbacks");
+		int count = channel_count.get();
+
+		spatial_playbacks.resize(count);
+		for (int channel_idx = 0; channel_idx < count; channel_idx++) {
+			Ref<AudioStreamPlaybackSpatial> spatial_playback;
+			spatial_playback.instantiate();
+			spatial_playback->active.set();
+			spatial_playback->channel = channel_idx;
+			spatial_playback->spatializer = this;
+			spatial_playbacks.write[channel_idx] = spatial_playback;
+			AudioServer::get_singleton()->start_playback_stream(spatial_playback, get_bus_map(params, channel_idx));
+		}
+	}
 }
 
 void AudioSpatializerInstance::stop_playback_stream(Ref<AudioStreamPlayback> p_playback) {
 	ERR_FAIL_COND(p_playback.is_null());
 
+	// print_verbose("AudioSpatializerInstance stop_playback_stream");
 	if (p_playback->is_playing()) {
 		p_playback->stop();
 	}
@@ -98,44 +107,17 @@ void AudioSpatializerInstance::stop_playback_stream(Ref<AudioStreamPlayback> p_p
 		return;
 	}
 
+	// print_verbose("AudioSpatializerInstance stop_playback_stream: playback_node found, setting inactive");
 	playback_node->active.clear();
-
-	// for (int channel_idx = 0; channel_idx < playback_node->spatial_playbacks.size(); channel_idx++) {
-	// 	if (playback_node->spatial_playbacks[channel_idx]->active.is_set()) {
-	// 		playback_node->spatial_playbacks.write[channel_idx]->active.clear();
-	// 		AudioServer::get_singleton()->stop_playback_stream(playback_node->spatial_playbacks[channel_idx]);
-	// 	}
-	// }
 }
 
-void AudioSpatializerInstance::set_playback_paused(Ref<AudioStreamPlayback> p_playback, bool p_paused) {
-	ERR_FAIL_COND(p_playback.is_null());
-
-	//print_verbose(vformat("AudioSpatializerInstance set_playback_paused: %s", p_paused ? "true" : "false"));
-
-	SpatialPlaybackListNode *playback_node = _find_playback_list_node(p_playback);
-	if (!playback_node) {
-		return;
-	}
-
-	for (int channel_idx = 0; channel_idx < playback_node->spatial_playbacks.size(); channel_idx++) {
-		if (playback_node->spatial_playbacks[channel_idx]->active.is_set()) {
-			AudioServer::get_singleton()->set_playback_paused(playback_node->spatial_playbacks[channel_idx], p_paused);
+void AudioSpatializerInstance::set_playback_paused(bool p_paused) {
+	// Pause spatial_playbacks on AudioServer
+	for (int channel_idx = 0; channel_idx < spatial_playbacks.size(); channel_idx++) {
+		if (spatial_playbacks[channel_idx]->active.is_set()) {
+			AudioServer::get_singleton()->set_playback_paused(spatial_playbacks[channel_idx], p_paused);
 		}
 	}
-
-	// SpatialPlaybackListNode::PlaybackState new_state, old_state;
-	// do {
-	// 	old_state = playback_node->state.load();
-	// 	new_state = p_paused ? SpatialPlaybackListNode::FADE_OUT_TO_PAUSE : SpatialPlaybackListNode::PLAYING;
-	// 	if (!p_paused && old_state == SpatialPlaybackListNode::PLAYING) {
-	// 		return; // No-op.
-	// 	}
-	// 	if (p_paused && (old_state == SpatialPlaybackListNode::PAUSED || old_state == SpatialPlaybackListNode::FADE_OUT_TO_PAUSE)) {
-	// 		return; // No-op.
-	// 	}
-
-	// } while (!playback_node->state.compare_exchange_strong(old_state, new_state));
 }
 
 bool AudioSpatializerInstance::is_playback_active(Ref<AudioStreamPlayback> p_playback) {
@@ -153,15 +135,10 @@ bool AudioSpatializerInstance::is_playback_active(Ref<AudioStreamPlayback> p_pla
 	if (!playback_node) {
 		return false;
 	}
-	if (!playback_node->active.is_set()) {
+	if (!playback_active.is_set()) {
 		return false;
 	}
-
-	//return playback_node->state.load() == SpatialPlaybackListNode::PLAYING;
-	if (!playback_node->spatial_playbacks[0]->active.is_set()) {
-		return false;
-	}
-	return AudioServer::get_singleton()->is_playback_active(playback_node->spatial_playbacks[0]);
+	return playback_node->active.is_set();
 }
 
 float AudioSpatializerInstance::get_playback_position(Ref<AudioStreamPlayback> p_playback) {
@@ -180,21 +157,15 @@ float AudioSpatializerInstance::get_playback_position(Ref<AudioStreamPlayback> p
 	return playback_node->stream_playback->get_playback_position();
 }
 
-bool AudioSpatializerInstance::is_playback_paused(Ref<AudioStreamPlayback> p_playback) {
-	ERR_FAIL_COND_V(p_playback.is_null(), false);
-
-	SpatialPlaybackListNode *playback_node = _find_playback_list_node(p_playback);
-	if (!playback_node) {
+bool AudioSpatializerInstance::is_playback_paused() {
+	// Paused applies to spatializer as a whole. Check the first spatial_playback state from AudioServer.
+	if (!playback_active.is_set()) {
 		return false;
 	}
-	if (!playback_node->active.is_set()) {
+	if (spatial_playbacks.is_empty()) {
 		return false;
 	}
-
-	if (!playback_node->spatial_playbacks[0]->active.is_set()) {
-		return false;
-	}
-	return AudioServer::get_singleton()->is_playback_paused(playback_node->spatial_playbacks[0]);
+	return AudioServer::get_singleton()->is_playback_paused(spatial_playbacks[0]);
 }
 
 void AudioSpatializerInstance::init_channels_and_buffers() {
@@ -209,44 +180,36 @@ void AudioSpatializerInstance::init_channels_and_buffers() {
 	int old_count = channel_count.get();
 	if (old_count != count) {
 		channel_count.set(count);
-		print_verbose(vformat("AudioSpatializerInstance: channel_count set to %d", channel_count.get()));
+		// print_verbose(vformat("AudioSpatializerInstance: channel_count set to %d", channel_count.get()));
 
-		Ref<SpatializerParameters> params = get_spatializer_parameters();
-		if (params.is_null()) {
-			return;
-		}
-
-		// Changing channels just clears all playing audio
-		for (SpatialPlaybackListNode *playback_node : playback_list) {
-			// Save playback position
-			float playback_pos = playback_node->stream_playback->get_playback_position();
-
-			// Stop all current playback streams
-			for (int i = 0; i < playback_node->spatial_playbacks.size(); i++) {
-				AudioServer::get_singleton()->stop_playback_stream(playback_node->spatial_playbacks[i]);
+		if (playback_active.is_set()) {
+			Ref<SpatializerParameters> params = get_spatializer_parameters();
+			if (params.is_null()) {
+				return;
 			}
-			playback_node->spatial_playbacks.clear();
 
-			// Start new playback streams. Parent playback was stopped, restart it at saved pos.
-			playback_node->stream_playback->start(playback_pos);
-
-			// Resize to new channel count, and instantiate new spatial playbacks
-			playback_node->spatial_playbacks.resize(count);
-			for (int channel_idx = 0; channel_idx < count; channel_idx++) {
-				Ref<AudioStreamPlaybackSpatial> spatial_playback;
-				spatial_playback.instantiate();
-				spatial_playback->active.set();
-				spatial_playback->stream_playback = playback_node->stream_playback;
-				spatial_playback->channel = channel_idx;
-				spatial_playback->spatializer = this;
-				playback_node->spatial_playbacks.write[channel_idx] = spatial_playback;
-				AudioServer::get_singleton()->start_playback_stream(spatial_playback, get_bus_map(params, channel_idx));
+			// Mark all channels as mixed, so next process frame will update mix_buffer
+			for (bool &is_mixed : channel_mixed) {
+				is_mixed = true;
 			}
-		}
 
-		// Mark all channels as mixed, so next process frame will update mix_buffer
-		for (bool &is_mixed : channel_mixed) {
-			is_mixed = true;
+			if (count > old_count) {
+				spatial_playbacks.resize(count);
+				for (int channel_idx = old_count; channel_idx < count; channel_idx++) {
+					Ref<AudioStreamPlaybackSpatial> spatial_playback;
+					spatial_playback.instantiate();
+					spatial_playback->active.set();
+					spatial_playback->channel = channel_idx;
+					spatial_playback->spatializer = this;
+					spatial_playbacks.write[channel_idx] = spatial_playback;
+					AudioServer::get_singleton()->start_playback_stream(spatial_playback, get_bus_map(params, channel_idx));
+				}
+			} else {
+				for (int channel_idx = old_count - 1; channel_idx >= count; channel_idx--) {
+					AudioServer::get_singleton()->stop_playback_stream(spatial_playbacks[channel_idx]);
+				}
+				spatial_playbacks.resize(count);
+			}
 		}
 	}
 }
@@ -299,12 +262,10 @@ void AudioSpatializerInstance::update_spatializer_parameters() {
 	set_spatializer_parameters(new_parameters);
 
 	if (new_parameters->should_update_parameters()) {
-		for (SpatialPlaybackListNode *playback_node : playback_list) {
-			for (int channel_idx = 0; channel_idx < playback_node->spatial_playbacks.size(); channel_idx++) {
-				Ref<AudioStreamPlayback> playback = playback_node->spatial_playbacks[channel_idx];
-				HashMap<StringName, Vector<AudioFrame>> bus_map = get_bus_map(new_parameters, channel_idx);
-				AudioServer::get_singleton()->set_playback_bus_volumes_linear(playback, bus_map);
-			}
+		for (int channel_idx = 0; channel_idx < spatial_playbacks.size(); channel_idx++) {
+			Ref<AudioStreamPlayback> playback = spatial_playbacks[channel_idx];
+			HashMap<StringName, Vector<AudioFrame>> bus_map = get_bus_map(new_parameters, channel_idx);
+			AudioServer::get_singleton()->set_playback_bus_volumes_linear(playback, bus_map);
 		}
 	}
 }
@@ -386,11 +347,8 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 	}
 
 	for (SpatialPlaybackListNode *playback : playback_list) {
-		// Inactive or paused streams are no-ops. Don't even mix audio from the stream playback.
+		// Inactive streams are no-ops. Don't even mix audio from the stream playback.
 		if (!playback->active.is_set()) {
-			continue;
-		}
-		if (is_playback_paused(playback->stream_playback)) {
 			continue;
 		}
 
@@ -471,30 +429,23 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 }
 
 void AudioSpatializerInstance::_manage_playback_state() {
+	int active_playbacks = 0;
 	for (SpatialPlaybackListNode *playback : playback_list) {
+		active_playbacks++;
 		if (!playback->active.is_set()) {
-			print_verbose(vformat("AudioSpatializerInstance _manage_playback_state: inactive node on playback list being deleted"));
-			for (int i = 0; i < playback->spatial_playbacks.size(); i++) {
-				AudioServer::get_singleton()->stop_playback_stream(playback->spatial_playbacks[i]);
-			}
+			// print_verbose(vformat("AudioSpatializerInstance _manage_playback_state: inactive node on playback list being deleted"));
 			_delete_stream_playback_list_node(playback);
+			active_playbacks--;
 		}
+	}
 
-		// switch (playback->state.load()) {
-		// 	case SpatialPlaybackListNode::AWAITING_DELETION:
-		// 	case SpatialPlaybackListNode::FADE_OUT_TO_DELETION:
-		// 		// Remove the playback from the list.
-
-		// 		break;
-		// 	case SpatialPlaybackListNode::FADE_OUT_TO_PAUSE: {
-		// 		// Pause the stream.
-		// 		playback->state.store(SpatialPlaybackListNode::PAUSED);
-		// 	} break;
-		// 	case SpatialPlaybackListNode::PLAYING:
-		// 	case SpatialPlaybackListNode::PAUSED:
-		// 		// No-op!
-		// 		break;
-		// }
+	if (active_playbacks == 0) {
+		// print_verbose("AudioSpatializerInstance _manage_playback_state: no active nodes found, cleaning up spatial");
+		for (int i = 0; i < spatial_playbacks.size(); i++) {
+			AudioServer::get_singleton()->stop_playback_stream(spatial_playbacks[i]);
+		}
+		spatial_playbacks.clear();
+		playback_active.clear();
 	}
 }
 
@@ -515,12 +466,14 @@ bool AudioSpatializerInstance::_check_channel_mixed(int p_channel) {
 }
 
 void AudioSpatializerInstance::get_mixed_frames(int p_channel, AudioFrame *p_frames, int p_frame_count) {
+	//ERR_FAIL_COND(!is_playback_paused());
+
 	//print_verbose(vformat("AudioSpatializerInstance get_mixed_frames %d", p_channel));
 	init_channels_and_buffers();
 
 	if (_check_channel_mixed(p_channel)) {
-		_manage_playback_state();
 		_mix_from_playback_list(p_frame_count);
+		_manage_playback_state();
 	}
 
 	ERR_FAIL_INDEX_MSG(p_channel, mix_buffer.size(), vformat("Unexpected channel %d", p_channel));
@@ -547,7 +500,6 @@ void AudioSpatializerInstance::_delete_stream_playback_list_node(SpatialPlayback
 		p->playback_data.unref();
 		// active is fine
 		// lookahead is fine
-		p->spatial_playbacks.clear();
 		delete p;
 	});
 }
@@ -594,6 +546,7 @@ void AudioSpatializerInstance::_bind_methods() {
 AudioSpatializerInstance::AudioSpatializerInstance() {
 	mix_buffer.resize(MAX_CHANNELS_PER_BUS);
 	channel_count.set(0);
+	playback_active.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -614,67 +567,65 @@ AudioSpatializer::AudioSpatializer() {
 ///////////////////////////////////////////////////////////////////////////////
 
 void AudioStreamPlaybackSpatial::start(double p_from_pos) {
-	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: start(%f) [%s]", channel, p_from_pos, active.is_set() ? "active" : "inactive"));
-	if (active.is_set()) {
-		if (stream_playback->is_playing()) {
-			double playback_pos = stream_playback->get_playback_position();
-			if (playback_pos != p_from_pos) {
-				// maybe do something?
-				//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: start called on playing stream at %f vs new start pos %f", channel, playback_pos, p_from_pos));
-			}
-		} else {
-			stream_playback->start(p_from_pos);
-		}
-	}
+	// print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: start(%f) [%s]", channel, p_from_pos, active.is_set() ? "active" : "inactive"));
+	// if (active.is_set()) {
+	// 	if (stream_playback->is_playing()) {
+	// 		double playback_pos = stream_playback->get_playback_position();
+	// 		if (playback_pos != p_from_pos) {
+	// 			// maybe do something?
+	// 			//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: start called on playing stream at %f vs new start pos %f", channel, playback_pos, p_from_pos));
+	// 		}
+	// 	} else {
+	// 		stream_playback->start(p_from_pos);
+	// 	}
+	// }
 	//
 }
 
 void AudioStreamPlaybackSpatial::stop() {
-	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: stop() [%s]", channel, active.is_set() ? "active" : "inactive"));
-	if (active.is_set()) {
-		if (stream_playback->is_playing()) {
-			stream_playback->stop();
-		}
-	}
+	// print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: stop() [%s]", channel, active.is_set() ? "active" : "inactive"));
+	// if (active.is_set()) {
+	// 	if (stream_playback->is_playing()) {
+	// 		stream_playback->stop();
+	// 	}
+	// }
 }
 
 bool AudioStreamPlaybackSpatial::is_playing() const {
 	// Expect this to get called every AudioServer frame
-	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: is_playing() [%s]", channel, active ? "active" : "inactive"));
-	if (active.is_set()) {
-		return stream_playback->is_playing();
-	}
-	return false;
+	// print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: is_playing() [%s]", channel, active.is_set() ? "active" : "inactive"));
+	// if (active.is_set()) {
+	// 	return stream_playback->is_playing();
+	// }
+	return spatializer->playback_active.is_set();
 }
 
 int AudioStreamPlaybackSpatial::get_loop_count() const {
 	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: get_loop_count() [%s]", channel, active.is_set() ? "active" : "inactive"));
-	if (active.is_set()) {
-		return stream_playback->get_loop_count();
-	}
 	return 0;
 }
 
 double AudioStreamPlaybackSpatial::get_playback_position() const {
 	// Only called when get_playback_position called
 	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: get_playback_position() [%s]", channel, active.is_set() ? "active" : "inactive"));
-	if (active.is_set()) {
-		return stream_playback->get_playback_position();
-	}
+	// if (active.is_set()) {
+	// 	return stream_playback->get_playback_position();
+	// }
+	// return spatializer->get_playback_position();
 	return 0;
 }
 
 void AudioStreamPlaybackSpatial::tag_used_streams() {
 	// Expect this to get called every AudioServer frame
 	//print_verbose(vformat("AudioStreamPlaybackSpatial[%d]: tag_used_streams() [%s]", channel, active ? "active" : "inactive"));
-	if (active.is_set() && channel == 0) {
-		stream_playback->tag_used_streams();
-	}
+	// if (active.is_set() && channel == 0) {
+	// 	stream_playback->tag_used_streams();
+	// }
 }
 
 int AudioStreamPlaybackSpatial::mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames) {
 	// Expect this to get called every AudioServer frame
-	if (active.is_set()) {
+	if (spatializer->playback_active.is_set() && active.is_set()) {
 		//print_verbose(vformat("AudioStreamPlaybackSpatial mix %d", channel));
 		// Ignore p_rate_scale; it comes from the playback node in AudioServer, which is set by us anyway, we have a local copy we'll use.
 		spatializer->get_mixed_frames(channel, p_buffer, p_frames);
