@@ -78,6 +78,10 @@ void SpatializerParameters::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_update_parameters", "update"), &SpatializerParameters::set_update_parameters);
 	ClassDB::bind_method(D_METHOD("should_update_parameters"), &SpatializerParameters::should_update_parameters);
+
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR2_ARRAY, "mix_volumes"), "set_mix_volumes", "get_mix_volumes");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "pitch_scale", PROPERTY_HINT_RANGE, "0.01,4.0,0.01"), "set_pitch_scale", "get_pitch_scale");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "update_parameters"), "set_update_parameters", "should_update_parameters");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
