@@ -26,46 +26,13 @@
 				Return the stored [bus_volumes] dictionary, constructed with calls to [method add_bus_volume].
 			</description>
 		</method>
-		<method name="get_mix_volumes" qualifiers="const">
-			<return type="PackedVector2Array" />
-			<description>
-				Get the [mix_volumes] list of volumes.
-			</description>
-		</method>
-		<method name="get_pitch_scale" qualifiers="const">
-			<return type="float" />
-			<description>
-				Get the value of [pitch_scale].
-			</description>
-		</method>
-		<method name="set_mix_volumes">
-			<return type="void" />
-			<param index="0" name="volumes" type="PackedVector2Array" />
-			<description>
-				Sets the [mix_volumes] list of volumes. Size should be 4, for each stereo channel pair usable in Godot.
-				When [AudioSpatializerInstance] is configured to mix channels internally, the volumes passed to [AudioServer] are divided by these, in order to limit the mixing done in the [AudioServer] to only gain adjust on secondary audio buses.
-				If mix channels is disabled, then [bus_volumes] are sent as is to [AudioServer].
-			</description>
-		</method>
-		<method name="set_pitch_scale">
-			<return type="void" />
-			<param index="0" name="pitch_scale" type="float" />
-			<description>
-				Sets the pitch scale used to mix samples from the audio stream.
-			</description>
-		</method>
-		<method name="set_update_parameters">
-			<return type="void" />
-			<param index="0" name="update" type="bool" />
-			<description>
-				Sets the [update_parameters] flag, used to indicate whether [bus_volumes] has changed or not. Used to avoid sending empty [bus_volumes] updates every frame for sounds that are out of range.
-			</description>
-		</method>
-		<method name="should_update_parameters" qualifiers="const">
-			<return type="bool" />
-			<description>
-				Gets the state of the [update_parameters] flag.
-			</description>
-		</method>
 	</methods>
+	<members>
+		<member name="mix_volumes" type="PackedVector2Array" setter="set_mix_volumes" getter="get_mix_volumes" default="PackedVector2Array()">
+		</member>
+		<member name="pitch_scale" type="float" setter="set_pitch_scale" getter="get_pitch_scale" default="1.33e-43">
+		</member>
+		<member name="update_parameters" type="bool" setter="set_update_parameters" getter="should_update_parameters" default="false">
+		</member>
+	</members>
 </class>
