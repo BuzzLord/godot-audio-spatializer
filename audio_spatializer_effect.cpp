@@ -54,6 +54,9 @@ void AudioSpatializerInstanceEffect::process_frames(Ref<SpatializerParameters> p
 		const AudioFrame *src;
 		AudioFrame *dst;
 
+		// Clever logic to select source and output buffers.
+		// First src buffer is always input p_source_buf; processing will ping-pong between p_output_buf and temp_buffer,
+		// until the last effect_instance, which will always write to p_output_buf, without any extra buffer copies required.
 		if (j == 0) {
 			src = p_source_buf;
 		} else {
@@ -153,7 +156,7 @@ void AudioSpatializerEffect::set_audio_effects(const TypedArray<AudioEffect> &p_
 
 Ref<AudioSpatializerInstance> AudioSpatializerEffect::instantiate() {
 	Ref<AudioSpatializerInstanceEffect> ins;
-	GDVIRTUAL_CALL(_instantiate, ins);
+	GDVIRTUAL_CALL(_instantiate_effect, ins);
 
 	if (ins.is_null()) {
 		ins.instantiate();
@@ -166,7 +169,7 @@ Ref<AudioSpatializerInstance> AudioSpatializerEffect::instantiate() {
 }
 
 void AudioSpatializerEffect::_bind_methods() {
-	GDVIRTUAL_BIND(_instantiate);
+	GDVIRTUAL_BIND(_instantiate_effect);
 
 	ClassDB::bind_method(D_METHOD("set_audio_effects", "audio_effects"), &AudioSpatializerEffect::set_audio_effects);
 	ClassDB::bind_method(D_METHOD("get_audio_effects"), &AudioSpatializerEffect::get_audio_effects);

@@ -85,7 +85,7 @@ private:
 	LocalVector<Ref<AudioEffect>> audio_effects;
 
 protected:
-	GDVIRTUAL0R(Ref<AudioSpatializerInstanceEffect>, _instantiate)
+	GDVIRTUAL0R(Ref<AudioSpatializerInstanceEffect>, _instantiate_effect)
 	static void _bind_methods();
 
 public:
