@@ -87,12 +87,12 @@ void AudioSpatializerInstance3D::calc_output_vol_surround(const Vector3 &source_
 			output.write[2][1] = volumes[4]; // rear-right
 			[[fallthrough]];
 		case AudioServer::SPEAKER_SURROUND_31:
-			output.write[1][1] = 1.0; // LFE - always full power
 			output.write[1][0] = volumes[2]; // center
+			output.write[1][1] = 1.0; // LFE - always full power
 			[[fallthrough]];
 		case AudioServer::SPEAKER_MODE_STEREO:
-			output.write[0][1] = volumes[1]; // front-right
 			output.write[0][0] = volumes[0]; // front-left
+			output.write[0][1] = volumes[1]; // front-right
 			break;
 	}
 }
@@ -107,6 +107,17 @@ void AudioSpatializerInstance3D::calc_output_vol_stereo(const Vector3 &source_di
 	double cosx = CLAMP(source_dir.x / (flatrad == 0.0 ? 1.0 : flatrad), -1.0, 1.0);
 	double fcosx = cosx * f;
 	output.write[0] = Vector2(sqrt((-fcosx + 1.0) / 2.0), sqrt((fcosx + 1.0) / 2.0));
+}
+
+void AudioSpatializerInstance3D::calc_output_vol(const Vector3 &source_dir, Vector<Vector2> &output) {
+	if (AudioServer::get_singleton()->get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
+		calc_output_vol_stereo(source_dir, cached_global_panning_strength * base->panning_strength, output);
+	} else {
+		// Bake in a constant factor here to allow the project setting defaults for 2d and 3d to be normalized to 1.0.
+		float tightness = cached_global_panning_strength * 2.0f;
+		tightness *= base->panning_strength;
+		calc_output_vol_surround(source_dir, tightness, output);
+	}
 }
 
 float AudioSpatializerInstance3D::get_attenuation_db(float p_distance) const {
@@ -142,10 +153,7 @@ float AudioSpatializerInstance3D::get_attenuation_db(float p_distance) const {
 #ifndef PHYSICS_3D_DISABLED
 void AudioSpatializerInstance3D::calc_reverb_vol(Area3D *area, Vector3 listener_area_pos, Vector<Vector2> direct_path_vol, Vector<Vector2> &reverb_vol) {
 	reverb_vol.resize(MAX_CHANNELS_PER_BUS);
-	reverb_vol.write[0] = Vector2(0, 0);
-	reverb_vol.write[1] = Vector2(0, 0);
-	reverb_vol.write[2] = Vector2(0, 0);
-	reverb_vol.write[3] = Vector2(0, 0);
+	reverb_vol.fill(Vector2(0, 0));
 
 	float uniformity = area->get_reverb_uniformity();
 	float area_send = area->get_reverb_amount();
@@ -155,7 +163,7 @@ void AudioSpatializerInstance3D::calc_reverb_vol(Area3D *area, Vector3 listener_
 		float attenuation = Math::db_to_linear(get_attenuation_db(distance));
 
 		// Determine the fraction of sound that would come from each speaker if they were all driven uniformly.
-		float center_val[3] = { 0.5f, 0.25f, 0.16666f };
+		float center_val[4] = { 0.5f, 0.25f, 0.16666f, 0.125f };
 		int chan_count = AudioServer::get_singleton()->get_channel_count();
 		AudioFrame center_frame(center_val[chan_count - 1], center_val[chan_count - 1]);
 
@@ -165,28 +173,7 @@ void AudioSpatializerInstance3D::calc_reverb_vol(Area3D *area, Vector3 listener_
 			rev_pos.y = 0;
 			rev_pos.normalize();
 
-			// Stereo pair.
-			float c = rev_pos.x * 0.5 + 0.5;
-			reverb_vol.write[0][0] = 1.0 - c;
-			reverb_vol.write[0][1] = c;
-
-			if (chan_count >= 3) {
-				// Center pair + Side pair
-				float xl = Vector3(-1, 0, -1).normalized().dot(rev_pos) * 0.5 + 0.5;
-				float xr = Vector3(1, 0, -1).normalized().dot(rev_pos) * 0.5 + 0.5;
-
-				reverb_vol.write[1][0] = xl;
-				reverb_vol.write[1][1] = xr;
-				reverb_vol.write[2][0] = 1.0 - xr;
-				reverb_vol.write[2][1] = 1.0 - xl;
-			}
-
-			if (chan_count >= 4) {
-				// Rear pair
-				// FIXME: Not sure what math should be done here
-				reverb_vol.write[3][0] = 1.0 - c;
-				reverb_vol.write[3][1] = c;
-			}
+			calc_output_vol(rev_pos, reverb_vol);
 
 			for (int i = 0; i < chan_count; i++) {
 				reverb_vol.write[i] = reverb_vol[i].lerp(center_frame, attenuation);
@@ -400,18 +387,8 @@ Ref<SpatializerParameters> AudioSpatializerInstance3D::calculate_spatialization(
 		parameters->set_linear_attenuation(Math::db_to_linear(db_att));
 		parameters->set_attenuation_filter_cutoff_hz(base->get_attenuation_filter_cutoff_hz());
 
-		for (Vector2 &frame : tmp_volume) {
-			frame = Vector2(0, 0);
-		}
-
-		if (AudioServer::get_singleton()->get_speaker_mode() == AudioServer::SPEAKER_MODE_STEREO) {
-			calc_output_vol_stereo(local_pos, cached_global_panning_strength * base->panning_strength, tmp_volume);
-		} else {
-			// Bake in a constant factor here to allow the project setting defaults for 2d and 3d to be normalized to 1.0.
-			float tightness = cached_global_panning_strength * 2.0f;
-			tightness *= base->panning_strength;
-			calc_output_vol_surround(local_pos.normalized(), tightness, tmp_volume);
-		}
+		tmp_volume.fill(Vector2(0, 0));
+		calc_output_vol(local_pos, tmp_volume);
 
 		for (int64_t k = 0; k < tmp_volume.size(); k++) {
 			tmp_volume.write[k] = multiplier * tmp_volume[k];

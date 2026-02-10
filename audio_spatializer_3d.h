@@ -120,6 +120,7 @@ private:
 	bool mix_channel_mode = true;
 
 protected:
+	void calc_output_vol(const Vector3 &source_dir, Vector<Vector2> &output);
 	void calc_output_vol_surround(const Vector3 &source_dir, real_t tightness, Vector<Vector2> &output);
 	void calc_output_vol_stereo(const Vector3 &source_dir, real_t panning_strength, Vector<Vector2> &output);
 
