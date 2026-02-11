@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="AudioSpatializerInstanceEffect" inherits="AudioSpatializerInstance" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+		Audio Spatializer Instance that can use [AudioEffect]s.
 	</brief_description>
 	<description>
+		Audio Spatializer Instance that can use [AudioEffect]s. Needs to be extended to implement [method AudioSpatializerInstance._calculate_spatialization]. Takes care of the audio stream processing and mixing, so you do not need to implement [method AudioSpatializerInstance._process_frames], [method AudioSpatializerInstance._should_process_frames], [method AudioSpatializerInstance._mix_channel], or [method AudioSpatializerInstance._should_mix_channels].
+		You can implement [method _instantiate_playback_data], but it should return a subclass of [SpatializerPlaybackDataEffect].
+		Since the audio mixing is handled, this class is ideal for making [AudioSpatializer] implementations with GDScript or C#.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -10,12 +14,15 @@
 		<method name="_process_effects" qualifiers="virtual">
 			<return type="void" />
 			<param index="0" name="spatial_parameters" type="SpatializerParameters" />
+			<param index="1" name="playback_data" type="SpatializerPlaybackData" />
 			<description>
+				Method to update [AudioEffect] parameters per frame. Called as part of [method AudioSpatializerInstance._process_frame] before the [AudioEffect] array is used to process the audio stream.
 			</description>
 		</method>
 	</methods>
 	<members>
 		<member name="audio_effects" type="AudioEffect[]" setter="set_audio_effects" getter="get_audio_effects" default="[]">
+			Array of [AudioEffect]s that are used to process the audio stream during mixing. Populated by the parent [AudioSpatializerEffect] during instantiation.
 		</member>
 	</members>
 </class>

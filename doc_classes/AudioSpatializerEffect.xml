@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="AudioSpatializerEffect" inherits="AudioSpatializer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+		Audio Spatializer that can use [AudioEffect]s.
 	</brief_description>
 	<description>
+		An [AudioSpatializer] that can take a list of [AudioEffect]s, which are used to process the [AudioStream] when it is being mixed. Needs to be extended, to return a valid [AudioSpatializerInstanceEffect] implementation.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -10,11 +12,13 @@
 		<method name="_instantiate_effect" qualifiers="virtual">
 			<return type="AudioSpatializerInstanceEffect" />
 			<description>
+				Used to instantiate an [AudioSpatializerInstanceEffect] implementation. Used in place of the [method AudioSpatializer._instantiate].
 			</description>
 		</method>
 	</methods>
 	<members>
 		<member name="audio_effects" type="AudioEffect[]" setter="set_audio_effects" getter="get_audio_effects" default="[]">
+			Array of [AudioEffect]s that are used to process the audio stream during mixing. This array is copied and appended to [member AudioSpatializerInstanceEffect.audio_effects] after [method _instantiate_effect] is used to create them.
 		</member>
 	</members>
 </class>

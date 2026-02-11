@@ -11,7 +11,7 @@
 		<method name="_instantiate" qualifiers="virtual required">
 			<return type="AudioSpatializerInstance" />
 			<description>
-				Instantiates and configures an appropriate [AudioSpatializerInstance].
+				Instantiates and configures an appropriate [AudioSpatializerInstance] implementation.
 			</description>
 		</method>
 	</methods>

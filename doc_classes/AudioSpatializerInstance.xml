@@ -4,6 +4,8 @@
 		Audio Spatializer Instance calculates spatialization for an [AudioStreamPlayerSpatial].
 	</brief_description>
 	<description>
+		Every [AudioStreamPlayerSpatial] that has a specific [AudioSpatializer] will get an instance created for it. There are a number of methods to implement, some are required, many are optional.
+		[b]Note:[/b] you should not use member variables on the [AudioSpatializerInstance] to share data between [method _calculate_spatializion], [method _process_frames], and [method _mix_channel]. These methods are being called on different threads, and doing so can result in race conditions and generally undefined behavior. Store any important data in [SpatializerParameters] for use in the process/mix methods.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -11,16 +13,19 @@
 		<method name="_calculate_spatialization" qualifiers="virtual required">
 			<return type="SpatializerParameters" />
 			<description>
+				Calculates all relevant details required to mix sound into the audio system. These are stored in a [SpatializerParameters] object (which can be extended), which is returned by the method. This method is called on the Physics thread, and so any physics calculations (e.g. raycasts, intersections, etc) can be done here, and their results stored for later use. The base [SpatializerParameters] has a number of fields that should be populated, see below. Access to the parent [AudioStreamPlayerSpatial] is available via [method get_audio_player()] to get sound specific properties (e.g. position, volume, pitch).
 			</description>
 		</method>
 		<method name="_initialize_audio_player" qualifiers="virtual">
 			<return type="void" />
 			<description>
+				This method is called as part of instance creation, just after the parent [AudioStreamPlayerSpatial] reference is assigned (accessible via [method get_audio_player]). Useful for registering for callback or notifications from the audio player, or setting default values based on an audio player properties.
 			</description>
 		</method>
 		<method name="_instantiate_playback_data" qualifiers="virtual">
 			<return type="SpatializerPlaybackData" />
 			<description>
+				Returns a new [SpatializerPlaybackData] object each time a new playback is created (i.e. every time the sound plays). Override this method to return a custom playback data structure (along with any initialization needed for it) for your spatializer. The data structure is stored with the playback, and is passed into [method _process_frames] and [method _mix_channel] to be used for storing persistent data between calls to allow for temporal filtering. It can be read from and written to in either method safely.
 			</description>
 		</method>
 		<method name="_mix_channel" qualifiers="virtual">
@@ -32,6 +37,14 @@
 			<param index="4" name="source_buf" type="const void*" />
 			<param index="5" name="frame_count" type="int" />
 			<description>
+				If your spatialization requires non-linear effects happening on a per-channel basis (i.e. something that could not be achieved by using per-channel volumes modulating a single source audio stream), this method can be used to do custom mixing per channel. This is called from the Audio thread.
+				- [param spatializer_parameters]: The most recently calculated parameters returned from [method _calculate_spatialization]. These can be used to configure filters or process the audio stream frames.
+				- [param playback_data]: A data structure that is created per playback, and is persisted between frames to allow for temporal filtering. To get per-channel data, add 4 parameters here, and use [param channel] to select the it.
+				- [param channel]: The current audio channel index to mix ([b]note:[/b] this is a [i]stereo[/i] audio channel index, which corresponds to one of four channel pairs the [AudioServer] uses internally; [code]0[/code] is front left/right, [code]1[/code] is center/LFE, [code]2[/code] is rear left/right, [code]3[/code] is side left/right).
+				- [param output_buf]: The output buffer to write the processed audio stream into. This buffer is [b]cumulative[/b], and should have mixed stream [i]added[/i] to the output, not overwritten.
+				- [param source_buf]: The input buffer to read the incoming audio stream info from.
+				- [param frame_count]: The length of [param source_buf] and [param output_buf]; i.e. the number of [AudioFrame]s to process.
+				[b]Note:[/b] this should only be implemented in a GDExtension; GDScript and C# don't work.
 			</description>
 		</method>
 		<method name="_process_frames" qualifiers="virtual">
@@ -42,21 +55,31 @@
 			<param index="3" name="source_buf" type="const void*" />
 			<param index="4" name="frame_count" type="int" />
 			<description>
+				An intermediate processing step on the single (stereo) channel audio stream before mixing. This is called from the Audio thread.
+				- [param spatializer_parameters]: The most recently calculated parameters returned from [method _calculate_spatialization]. These can be used to configure filters or process the audio stream frames.
+				- [param playback_data]: A data structure that is created per playback, and is persisted between frames to allow for temporal filtering.
+				- [param output_buf]: The output buffer to write the processed audio stream into.
+				- [param source_buf]: The input buffer to read the incoming audio stream info from.
+				- [param frame_count]: The length of [param source_buf] and [param output_buf]; i.e. the number of [AudioFrame]s to process.
+				[b]Note:[/b] this should only be implemented in a GDExtension; GDScript and C# don't work.
 			</description>
 		</method>
 		<method name="_should_mix_channels" qualifiers="virtual const">
 			<return type="bool" />
 			<description>
+				Returns a boolean telling the [AudioSpatializer] whether or not to call [method _mix_channel]. It also changes how spatializer interacts with the [AudioServer], and should only be used if you need access to the way frames are mixed into the stream.
 			</description>
 		</method>
 		<method name="_should_process_frames" qualifiers="virtual const">
 			<return type="bool" />
 			<description>
+				Returns a boolean telling the [AudioSpatializer] whether or not the call [method _process_frames]. If no additional processing is required for your spatializer, this skips the buffer copy.
 			</description>
 		</method>
 		<method name="get_audio_player" qualifiers="const">
 			<return type="AudioStreamPlayerSpatial" />
 			<description>
+				Get the [AudioStreamPlayerSpatial] this [AudioSpatializerEffect] is being applied to, for reference. Useful for retrieving audio player properties during [method _calculate_spatialization], such as position, velocity, pitch, etc.
 			</description>
 		</method>
 	</methods>

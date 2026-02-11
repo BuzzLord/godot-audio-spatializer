@@ -40,7 +40,7 @@
 			The distance past which the sound can no longer be heard at all. Only has an effect if set to a value greater than [code]0.0[/code]. [member max_distance] works in tandem with [member unit_size]. However, unlike [member unit_size] whose behavior depends on the [member attenuation_model], [member max_distance] always works in a linear fashion. This can be used to prevent the [AudioStreamPlayer3D] from requiring audio mixing when the listener is far away, which saves CPU resources.
 		</member>
 		<member name="mix_channel_mode" type="bool" setter="set_mix_channel_mode" getter="get_mix_channel_mode" default="false">
-			If [code]true[/code], the spatializer will mix audio internally for each channel. Otherwise, volume mixing is done in the [AudioServer]. Only has an effect on startup, when the [AudioSpatializerInstance] is created.
+			If [code]true[/code], the spatializer will mix audio internally for each channel. Otherwise, volume mixing is done in the [AudioServer]. Changing this only has an effect on startup, when the [AudioSpatializerInstance] is created.
 		</member>
 		<member name="panning_strength" type="float" setter="set_panning_strength" getter="get_panning_strength" default="1.0">
 			Scales the panning strength for this node by multiplying the base [member ProjectSettings.audio/general/3d_panning_strength] by this factor. If the product is [code]0.0[/code] then stereo panning is disabled and the volume is the same for all channels. If the product is [code]1.0[/code] then one of the channels will be muted when the sound is located exactly to the left (or right) of the listener.

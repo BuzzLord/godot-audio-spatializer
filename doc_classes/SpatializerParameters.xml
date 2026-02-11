@@ -16,23 +16,26 @@
 			<param index="0" name="bus" type="StringName" />
 			<param index="1" name="volumes" type="PackedVector2Array" />
 			<description>
-				Add a list of volumes for the specified audio bus. [param bus] should correspond to a valid audio bus. [param volumes] should be size 4, where each index corresponds to a different pair of volumes for the different stereo channels.
-				Volumes are added to a Dictionary, keyed by [param bus].
+				Add a list of linear audio volumes for the specified audio bus. [param bus] should correspond to a valid audio bus. [param volumes] should be an array of size 4, where each index corresponds to a different pair of volumes for the different stereo channels.
+				Volumes are added to a dictionary, keyed by [param bus].
 			</description>
 		</method>
 		<method name="get_bus_volumes" qualifiers="const">
 			<return type="Dictionary" />
 			<description>
-				Return the stored [bus_volumes] dictionary, constructed with calls to [method add_bus_volume].
+				Return the internal bus volumes dictionary, constructed with calls to [method add_bus_volume].
 			</description>
 		</method>
 	</methods>
 	<members>
 		<member name="mix_volumes" type="PackedVector2Array" setter="set_mix_volumes" getter="get_mix_volumes" default="PackedVector2Array()">
+			A [PackedVector2Array] of size 4, where each entry corresponds to an internal stereo audio channel ([code]0[/code] is front left/right, [code]1[/code] is center/LFE, [code]2[/code] is rear left/right, [code]3[/code] is side left/right).
 		</member>
-		<member name="pitch_scale" type="float" setter="set_pitch_scale" getter="get_pitch_scale" default="1.33e-43">
+		<member name="pitch_scale" type="float" setter="set_pitch_scale" getter="get_pitch_scale" default="1.0">
+			The pitch scale used to sample the [AudioStreamPlayback] each time mix is called. Should be set to the [member AudioStreamPlayerSpatial.pitch_scale]; use [method AudioSpatializerInstance.get_audio_player] to access the audio player.
 		</member>
 		<member name="update_parameters" type="bool" setter="set_update_parameters" getter="should_update_parameters" default="false">
+			A flag used by [AudioSpatializer] to determine whether or not to send the audio bus_volumes to the [AudioServer] this frame. May be used to not send the values if, for example, the sound is out of range of any listeners, and should not be updating volumes that haven't changed.
 		</member>
 	</members>
 </class>

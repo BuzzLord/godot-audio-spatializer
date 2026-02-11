@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="SpatializerPlaybackDataEffect" inherits="SpatializerPlaybackData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
+		Spatializer playback data for [AudioSpatializerEffect].
 	</brief_description>
 	<description>
+		Spatializer playback data for [AudioSpatializerEffect]. Holds the [AudioEffectInstance] objects used for processing.
 	</description>
 	<tutorials>
 	</tutorials>
