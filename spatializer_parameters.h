@@ -45,7 +45,7 @@ private:
 	// Vector of volumes (size 4) that should be used by AudioSpatializer to mix the audio frames to, for each channel.
 	Vector<Vector2> mix_volumes;
 	// Pitch scale used when mixing frames from the stream playback.
-	float pitch_scale;
+	float pitch_scale = 1.0f;
 	// Should be set to true if volumes were updated; will cause AudioServer to update the volumes. Useful when sound is outside max_distance, and you don't want to keep updating an empty set of bus volumes.
 	bool update_parameters = false;
 
