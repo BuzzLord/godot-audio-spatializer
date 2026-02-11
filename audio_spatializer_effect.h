@@ -47,7 +47,7 @@ private:
 	Vector<AudioFrame> temp_buffer;
 
 protected:
-	GDVIRTUAL1(_process_effects, Ref<SpatializerParameters>)
+	GDVIRTUAL2(_process_effects, Ref<SpatializerParameters>, Ref<SpatializerPlaybackData>)
 	static void _bind_methods();
 
 public:
@@ -57,7 +57,7 @@ public:
 	virtual bool should_process_frames() const override { return true; }
 	virtual bool should_mix_channels() const override { return false; }
 
-	virtual void process_effects(Ref<SpatializerParameters> p_parameters);
+	virtual void process_effects(Ref<SpatializerParameters> p_parameters, Ref<SpatializerPlaybackData> p_playback_data);
 
 	TypedArray<AudioEffect> get_audio_effects() const;
 	void set_audio_effects(const TypedArray<AudioEffect> &p_effects);

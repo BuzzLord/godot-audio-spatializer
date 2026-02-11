@@ -36,7 +36,7 @@ void AudioSpatializerInstanceEffect::process_frames(Ref<SpatializerParameters> p
 	Ref<SpatializerPlaybackDataEffect> playback_data = Ref<SpatializerPlaybackDataEffect>(Object::cast_to<SpatializerPlaybackDataEffect>(*p_playback_data));
 	Vector<Ref<AudioEffectInstance>> effect_instances = playback_data->get_effect_instances();
 
-	process_effects(p_parameters);
+	process_effects(p_parameters, playback_data);
 
 	if (effect_instances.size() == 0) {
 		for (int frame_idx = 0; frame_idx < p_frame_count; frame_idx++) {
@@ -87,8 +87,8 @@ Ref<SpatializerPlaybackData> AudioSpatializerInstanceEffect::instantiate_playbac
 	return data;
 }
 
-void AudioSpatializerInstanceEffect::process_effects(Ref<SpatializerParameters> p_parameters) {
-	GDVIRTUAL_CALL(_process_effects, p_parameters);
+void AudioSpatializerInstanceEffect::process_effects(Ref<SpatializerParameters> p_parameters, Ref<SpatializerPlaybackData> p_playback_data) {
+	GDVIRTUAL_CALL(_process_effects, p_parameters, p_playback_data);
 }
 
 TypedArray<AudioEffect> AudioSpatializerInstanceEffect::get_audio_effects() const {
@@ -113,7 +113,7 @@ void AudioSpatializerInstanceEffect::set_audio_effects(const TypedArray<AudioEff
 }
 
 void AudioSpatializerInstanceEffect::_bind_methods() {
-	GDVIRTUAL_BIND(_process_effects, "spatial_parameters");
+	GDVIRTUAL_BIND(_process_effects, "spatial_parameters", "playback_data");
 
 	ClassDB::bind_method(D_METHOD("set_audio_effects", "audio_effects"), &AudioSpatializerInstanceEffect::set_audio_effects);
 	ClassDB::bind_method(D_METHOD("get_audio_effects"), &AudioSpatializerInstanceEffect::get_audio_effects);
