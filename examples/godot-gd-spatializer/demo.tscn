@@ -1,0 +1,144 @@
+[gd_scene format=3 uid="uid://5ckihrrrsusv"]
+
+[ext_resource type="AudioStream" uid="uid://b3c8i71124eyv" path="res://speech_orig.wav" id="1_f3sb7"]
+[ext_resource type="Script" uid="uid://bxakemkrwula7" path="res://demo.gd" id="1_tlwt5"]
+[ext_resource type="Script" uid="uid://bt2rlh1j866ia" path="res://gd_spatializer.gd" id="3_aqk2v"]
+[ext_resource type="Script" uid="uid://2014eequ6155" path="res://camera_3d.gd" id="3_tlwt5"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_f3sb7"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_fj7yv"]
+sky_material = SubResource("ProceduralSkyMaterial_f3sb7")
+
+[sub_resource type="Environment" id="Environment_tlwt5"]
+background_mode = 2
+sky = SubResource("Sky_fj7yv")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="Compositor" id="Compositor_fj7yv"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gv5m4"]
+albedo_color = Color(0.5312895, 0.23483065, 0.23257041, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_f3sb7"]
+material = SubResource("StandardMaterial3D_gv5m4")
+size = Vector2(50, 50)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_aqk2v"]
+size = Vector3(4, 2, 4)
+
+[sub_resource type="SphereMesh" id="SphereMesh_fj7yv"]
+radius = 0.2
+height = 0.4
+radial_segments = 32
+rings = 16
+
+[sub_resource type="AudioSpatializerEffect" id="AudioSpatializerEffect_dwbse"]
+script = ExtResource("3_aqk2v")
+metadata/_custom_type_script = "uid://bt2rlh1j866ia"
+
+[sub_resource type="AudioSpatializer3D" id="AudioSpatializer3D_fj7yv"]
+
+[node name="Demo" type="Node3D" unique_id=677422353]
+script = ExtResource("1_tlwt5")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1468445802]
+environment = SubResource("Environment_tlwt5")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=916293288]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=630201043]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2)
+compositor = SubResource("Compositor_fj7yv")
+fov = 60.0
+script = ExtResource("3_tlwt5")
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=1264505400]
+mesh = SubResource("PlaneMesh_f3sb7")
+
+[node name="Area3D" type="Area3D" parent="." unique_id=1665036401]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -4)
+audio_bus_override = true
+reverb_bus_enabled = true
+reverb_bus_name = &"Reverb"
+reverb_bus_amount = 0.5
+reverb_bus_uniformity = 0.3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1879645368]
+shape = SubResource("BoxShape3D_aqk2v")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=465134594]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 1, 0)
+stream = ExtResource("1_f3sb7")
+max_polyphony = 5
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="AudioStreamPlayer3D" unique_id=183860494]
+mesh = SubResource("SphereMesh_fj7yv")
+
+[node name="GDAudioPlayerSpatial" type="AudioStreamPlayerSpatial" parent="." unique_id=841110614]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -0.236)
+stream = ExtResource("1_f3sb7")
+max_polyphony = 5
+spatializer = SubResource("AudioSpatializerEffect_dwbse")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GDAudioPlayerSpatial" unique_id=664459483]
+mesh = SubResource("SphereMesh_fj7yv")
+
+[node name="AudioPlayerSpatial3D" type="AudioStreamPlayerSpatial" parent="." unique_id=2030591885]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0)
+stream = ExtResource("1_f3sb7")
+max_polyphony = 5
+spatializer = SubResource("AudioSpatializer3D_fj7yv")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="AudioPlayerSpatial3D" unique_id=970859471]
+mesh = SubResource("SphereMesh_fj7yv")
+
+[node name="UI" type="Control" parent="." unique_id=469364407]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI" unique_id=80839278]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer" unique_id=688111072]
+layout_mode = 2
+
+[node name="Label1" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=545763040]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "1: Play AudioStreamPlayer3D (left)"
+
+[node name="Label2" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=1266891008]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "2: Play GDAudioPlayerSpatial (center)"
+
+[node name="Label3" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=142883151]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "3: Play AudioPlayerSpatial3D (right)"
+
+[node name="Label4" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=1358593593]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Space: Stop all players"
+
+[node name="Label5" type="Label" parent="UI/MarginContainer/VBoxContainer" unique_id=1390402705]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Esc: Quit"
