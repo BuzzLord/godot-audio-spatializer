@@ -609,7 +609,7 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 }
 
 void AudioSpatializerInstance3D::initialize_audio_player() {
-	if (!get_audio_player()) {
+	if (get_audio_player() == nullptr) {
 		return;
 	}
 
@@ -634,7 +634,7 @@ AudioSpatializerInstance3D::AudioSpatializerInstance3D() {
 }
 
 AudioSpatializerInstance3D::~AudioSpatializerInstance3D() {
-	if (get_audio_player()) {
+	if (get_audio_player() != nullptr) {
 		get_audio_player()->remove_transform_changed_callback(_transform_changed_cb, this);
 	}
 	velocity_tracker.unref();

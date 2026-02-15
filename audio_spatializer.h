@@ -86,7 +86,7 @@ private:
 	// Stores per-channel stream playbacks that are passed to AudioServer; should be up to 4, one per channel (depending on AudioServer::get_channel_count()).
 	Vector<Ref<AudioStreamPlaybackSpatial>> spatial_playbacks;
 
-	AudioStreamPlayerSpatial *audio_player;
+	AudioStreamPlayerSpatial *audio_player = nullptr;
 	Ref<SpatializerParameters> spatializer_parameters;
 
 	SafeFlag playback_active;
