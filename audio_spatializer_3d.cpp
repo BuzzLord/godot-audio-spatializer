@@ -593,14 +593,14 @@ void AudioSpatializerInstance3D::mix_channel(Ref<SpatializerParameters> p_parame
 			AudioFrame mixed = vol * p_source_buf[frame_idx];
 			processor_l->process_one_interp(mixed.left);
 			processor_r->process_one_interp(mixed.right);
-			p_out_buf[frame_idx] += mixed;
+			p_out_buf[frame_idx] = mixed;
 		}
 
 	} else {
 		for (int frame_idx = 0; frame_idx < p_frame_count; frame_idx++) {
 			// TODO: Make lerp speed buffer-size-invariant if buffer_size ever becomes a project setting to avoid very small buffer sizes causing pops due to too-fast lerps.
 			float lerp_param = (float)frame_idx / p_frame_count;
-			p_out_buf[frame_idx] += (p_vol_final * lerp_param + (1 - lerp_param) * p_vol_start) * p_source_buf[frame_idx];
+			p_out_buf[frame_idx] = (p_vol_final * lerp_param + (1 - lerp_param) * p_vol_start) * p_source_buf[frame_idx];
 		}
 	}
 

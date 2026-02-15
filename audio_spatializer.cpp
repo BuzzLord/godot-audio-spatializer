@@ -65,6 +65,7 @@ void AudioSpatializerInstance::start_playback_stream(Ref<AudioStreamPlayback> p_
 	//print_verbose("AudioSpatializerInstance start_playback_stream: lookahead populated");
 
 	playback_node->active.set();
+	playback_node->has_frames.set();
 	playback_node->playback_data = instantiate_playback_data();
 
 	// print_verbose("AudioSpatializerInstance start_playback_stream: set active and playback data instantiated");
@@ -328,13 +329,16 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 	//print_verbose(vformat("Got parameters: %s", parameters.is_null() ? "null" : "valid"));
 	ERR_FAIL_COND(parameters.is_null());
 
+	if (temp_buffer.size() < p_buffer_size) {
+		temp_buffer.resize(p_buffer_size);
+	}
 	for (int c = 0; c < channel_count.get(); c++) {
 		if (mix_buffer[c].size() < p_buffer_size) {
 			mix_buffer.write[c].resize(p_buffer_size);
 		}
 		AudioFrame *channel_buf = mix_buffer.write[c].ptrw();
 		for (int i = 0; i < p_buffer_size; i++) {
-			channel_buf[i] = AudioFrame(0.0, 0.0);
+			channel_buf[i] = AudioFrame(0.f, 0.f);
 		}
 	}
 
@@ -362,40 +366,45 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 
 		AudioFrame *buf = playback_buffer.ptrw();
 
-		// Copy the old contents of the lookahead buffer into the beginning of the playback buffer.
-		for (int i = 0; i < LOOKAHEAD_BUFFER_SIZE; i++) {
-			buf[i] = playback->lookahead[i];
-		}
+		if (playback->has_frames.is_set()) {
+			// Copy the old contents of the lookahead buffer into the beginning of the playback buffer.
+			for (int i = 0; i < LOOKAHEAD_BUFFER_SIZE; i++) {
+				buf[i] = playback->lookahead[i];
+			}
 
-		float pitch_scale = parameters->get_pitch_scale();
+			float pitch_scale = parameters->get_pitch_scale();
 
-		// Mix frame_count from the playback into the stored mixed_buffer for the playback
-		int mixed_frames = playback->stream_playback->mix(&buf[LOOKAHEAD_BUFFER_SIZE], pitch_scale, p_buffer_size);
-		mixed_frame_count += mixed_frames; // not sure this does what I want...
+			// Mix frame_count from the playback into the stored mixed_buffer for the playback
+			int mixed_frames = playback->stream_playback->mix(&buf[LOOKAHEAD_BUFFER_SIZE], pitch_scale, p_buffer_size);
 
-		if (mixed_frames != p_buffer_size) {
-			// We know we have at least the size of our lookahead buffer for fade-out purposes.
-			float fadeout_base = 0.96;
-			float fadeout_coefficient = 1;
-			float buffer_size_float = (float)LOOKAHEAD_BUFFER_SIZE;
-			float buffer_linear_fade_idx = 0.0;
+			if (mixed_frames != p_buffer_size) {
+				// We know we have at least the size of our lookahead buffer for fade-out purposes.
+				float fadeout_base = 0.96;
+				float fadeout_coefficient = 1;
+				float buffer_size_float = (float)LOOKAHEAD_BUFFER_SIZE;
+				float buffer_linear_fade_idx = 0.0;
 
-			int fade_limit = mixed_frames + LOOKAHEAD_BUFFER_SIZE;
-			for (int idx = mixed_frames; idx < p_buffer_size; idx++) {
-				if (idx < fade_limit) {
-					fadeout_coefficient *= fadeout_base;
-					buf[idx] *= fadeout_coefficient * (buffer_size_float - buffer_linear_fade_idx) / buffer_size_float;
-					buffer_linear_fade_idx += 1.0;
-				} else {
-					buf[idx] *= 0.0;
+				int fade_limit = mixed_frames + LOOKAHEAD_BUFFER_SIZE;
+				for (int idx = mixed_frames; idx < p_buffer_size; idx++) {
+					if (idx < fade_limit) {
+						fadeout_coefficient *= fadeout_base;
+						buf[idx] *= fadeout_coefficient * (buffer_size_float - buffer_linear_fade_idx) / buffer_size_float;
+						buffer_linear_fade_idx += 1.0;
+					} else {
+						buf[idx] *= 0.0;
+					}
+				}
+				// No more frames to mix
+				playback->has_frames.clear();
+			} else {
+				// Move the last little bit of what we just mixed into our lookahead buffer for the next time we mix playback frames.
+				for (int i = 0; i < LOOKAHEAD_BUFFER_SIZE; i++) {
+					playback->lookahead[i] = buf[p_buffer_size + i];
 				}
 			}
-			playback->active.clear();
 		} else {
-			// Move the last little bit of what we just mixed into our lookahead buffer for the next time we mix playback frames.
-			for (int i = 0; i < LOOKAHEAD_BUFFER_SIZE; i++) {
-				playback->lookahead[i] = buf[p_buffer_size + i];
-			}
+			// No more frames to mix, fill with zeros to let process_frames/mix_channel fill in.
+			playback_buffer.fill(AudioFrame(0, 0));
 		}
 
 		const AudioFrame *processed_buf;
@@ -407,22 +416,55 @@ void AudioSpatializerInstance::_mix_from_playback_list(int p_buffer_size) {
 			processed_buf = buf;
 		}
 
+		AudioFrame peak = AudioFrame(0, 0);
+
 		if (should_mix_channels()) {
 			int channels = channel_count.get();
 			// print_verbose(vformat("AudioSpatializerInstance _mix_from_playback_list %d channels", channels));
 			for (int channel_idx = 0; channel_idx < channels; channel_idx++) {
-				AudioFrame *channel_buf = mix_buffer.write[channel_idx].ptrw();
+				AudioFrame *output_buf = temp_buffer.ptrw();
 
 				// Mixes p_frame_count frames from processed buffer into channel buffer, using spatial calculation parameters
 				// and persistent playback_data.
-				mix_channel(parameters, playback_data, channel_idx, channel_buf, processed_buf, p_buffer_size);
+				mix_channel(parameters, playback_data, channel_idx, output_buf, processed_buf, p_buffer_size);
+
+				// Mix the buffer into the channel, find this playbacks peak.
+				AudioFrame *channel_buf = mix_buffer.write[channel_idx].ptrw();
+				for (int i = 0; i < p_buffer_size; i++) {
+					channel_buf[i] += output_buf[i];
+
+					float l = Math::abs(output_buf[i].left);
+					if (l > peak.left) {
+						peak.left = l;
+					}
+					float r = Math::abs(output_buf[i].right);
+					if (r > peak.right) {
+						peak.right = r;
+					}
+				}
 			}
 		} else {
 			// print_verbose(vformat("AudioSpatializerInstance _mix_from_playback_list no mix channels"));
-			// Copy processed buffer into (channel 0) output buffer
+			// Copy processed buffer into (channel 0) output buffer, and find peak.
 			AudioFrame *output_buf = mix_buffer.write[0].ptrw();
 			for (int i = 0; i < p_buffer_size; i++) {
 				output_buf[i] += processed_buf[i];
+
+				float l = Math::abs(processed_buf[i].left);
+				if (l > peak.left) {
+					peak.left = l;
+				}
+				float r = Math::abs(processed_buf[i].right);
+				if (r > peak.right) {
+					peak.right = r;
+				}
+			}
+		}
+
+		if (!playback->has_frames.is_set()) {
+			if (MAX(peak.right, peak.left) <= Math::db_to_linear(playback_disable_threshold_db)) {
+				playback->active.clear();
+				// print_verbose(vformat("Playback stopped: %.1f,%.1f <= %.1f", Math::linear_to_db(peak.right), Math::linear_to_db(peak.left), playback_disable_threshold_db));
 			}
 		}
 	}
@@ -531,6 +573,14 @@ Ref<SpatializerParameters> AudioSpatializerInstance::get_spatializer_parameters(
 	return ret;
 }
 
+float AudioSpatializerInstance::get_playback_disable_threshold_db() const {
+	return playback_disable_threshold_db;
+}
+
+void AudioSpatializerInstance::set_playback_disable_threshold_db(float p_threshold) {
+	playback_disable_threshold_db = p_threshold;
+}
+
 void AudioSpatializerInstance::_bind_methods() {
 	GDVIRTUAL_BIND(_calculate_spatialization);
 	GDVIRTUAL_BIND(_should_process_frames);
@@ -541,6 +591,11 @@ void AudioSpatializerInstance::_bind_methods() {
 	GDVIRTUAL_BIND(_initialize_audio_player);
 
 	ClassDB::bind_method(D_METHOD("get_audio_player"), &AudioSpatializerInstance::get_audio_player);
+
+	ClassDB::bind_method(D_METHOD("set_playback_disable_threshold_db", "threshold"), &AudioSpatializerInstance::set_playback_disable_threshold_db);
+	ClassDB::bind_method(D_METHOD("get_playback_disable_threshold_db"), &AudioSpatializerInstance::get_playback_disable_threshold_db);
+
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "playback_disable_threshold_db", PROPERTY_HINT_RANGE, "-80,0,0.1,suffix:dB"), "set_playback_disable_threshold_db", "get_playback_disable_threshold_db");
 }
 
 AudioSpatializerInstance::AudioSpatializerInstance() {

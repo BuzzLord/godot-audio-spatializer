@@ -53,33 +53,17 @@ public:
 
 private:
 	struct SpatialPlaybackListNode {
-		// The state machine for audio stream playbacks is as follows:
-		// 1. The playback is created and added to the playback list in the playing state.
-		// 2. The playback is (maybe) paused, and the state is set to FADE_OUT_TO_PAUSE.
-		// 2.1. The playback is mixed after being paused, and the audio server thread atomically sets the state to PAUSED after performing a brief fade-out.
-		// 3. The playback is (maybe) deleted, and the state is set to FADE_OUT_TO_DELETION.
-		// 3.1. The playback is mixed after being deleted, and the audio server thread atomically sets the state to AWAITING_DELETION after performing a brief fade-out.
-		// 		NOTE: The playback is not deallocated at this time because allocation and deallocation are not realtime-safe.
-		// 4. The playback is removed and deallocated on the main thread using the SafeList maybe_cleanup method.
-		// enum PlaybackState {
-		// 	PAUSED = 0, // Paused. Keep this stream playback around though so it can be restarted.
-		// 	PLAYING = 1, // Playing. Fading may still be necessary if volume changes!
-		// 	FADE_OUT_TO_PAUSE = 2, // About to pause.
-		// 	FADE_OUT_TO_DELETION = 3, // About to stop.
-		// 	AWAITING_DELETION = 4,
-		// };
 		// Updating this ref after the list node is created also breaks consistency guarantees, don't do it!
 		Ref<AudioStreamPlayback> stream_playback;
 		// Persistant playback data maintained between frames. Modified by mix_channel.
 		Ref<SpatializerPlaybackData> playback_data;
-		// Playback state determines the fate of a particular AudioStreamListNode during the mix step. Must be atomically replaced.
-		// std::atomic<PlaybackState> state;
+		// If the playback should still be processed, since it is still contributing to the mix.
 		SafeFlag active;
+		// If the playback audio stream still has frames to mix. Will become false at the end of playback, but active may stay true until any effects/processing is complete.
+		SafeFlag has_frames;
 		// The next few samples are stored here so we have some time to fade audio out if it ends abruptly at the beginning of the next mix.
 		AudioFrame lookahead[LOOKAHEAD_BUFFER_SIZE];
 	};
-
-	uint64_t mixed_frame_count = 0;
 
 	SafeList<SpatialPlaybackListNode *> playback_list;
 
@@ -94,10 +78,13 @@ private:
 	Vector<AudioFrame> playback_buffer;
 	Vector<AudioFrame> process_buffer;
 	Vector<Vector<AudioFrame>> mix_buffer;
+	Vector<AudioFrame> temp_buffer;
 	SafeNumeric<int> channel_count;
 	bool channel_mixed[MAX_CHANNELS_PER_BUS];
 
 	Mutex mutex;
+
+	float playback_disable_threshold_db = -80.0;
 
 	SpatialPlaybackListNode *_find_playback_list_node(Ref<AudioStreamPlayback> p_playback);
 
@@ -141,6 +128,9 @@ public:
 	bool is_playback_active(Ref<AudioStreamPlayback> p_playback);
 	float get_playback_position(Ref<AudioStreamPlayback> p_playback);
 	bool is_playback_paused();
+
+	float get_playback_disable_threshold_db() const;
+	void set_playback_disable_threshold_db(float p_threshold);
 
 	// Called from Audio Thread: AudioStreamSpatialPlayback.mix()
 	void get_mixed_frames(int p_channel, AudioFrame *p_frames, int p_frame_count);

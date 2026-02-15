@@ -582,10 +582,7 @@ void AudioStreamPlayerSpatial::remove_transform_changed_callback(AudioCallback p
 }
 
 AudioStreamPlayerSpatial::AudioStreamPlayerSpatial() {
-	//internal = memnew(AudioStreamPlayerInternal(this, callable_mp(this, &AudioStreamPlayerSpatial::play), callable_mp(this, &AudioStreamPlayerSpatial::stop), true));
-
 	set_disable_scale(true);
-	//cached_global_panning_strength = GLOBAL_GET_CACHED(float, "audio/general/3d_panning_strength");
 
 	bus = SceneStringName(Master);
 	AudioServer::get_singleton()->connect("bus_layout_changed", callable_mp((Object *)this, &Object::notify_property_list_changed));
@@ -593,5 +590,4 @@ AudioStreamPlayerSpatial::AudioStreamPlayerSpatial() {
 }
 
 AudioStreamPlayerSpatial::~AudioStreamPlayerSpatial() {
-	//memdelete(internal);
 }

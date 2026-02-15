@@ -41,7 +41,7 @@
 				- [param spatializer_parameters]: The most recently calculated parameters returned from [method _calculate_spatialization]. These can be used to configure filters or process the audio stream frames.
 				- [param playback_data]: A data structure that is created per playback, and is persisted between frames to allow for temporal filtering. To get per-channel data, add 4 parameters here, and use [param channel] to select the it.
 				- [param channel]: The current audio channel index to mix ([b]note:[/b] this is a [i]stereo[/i] audio channel index, which corresponds to one of four channel pairs the [AudioServer] uses internally; [code]0[/code] is front left/right, [code]1[/code] is center/LFE, [code]2[/code] is rear left/right, [code]3[/code] is side left/right).
-				- [param output_buf]: The output buffer to write the processed audio stream into. This buffer is [b]cumulative[/b], and should have mixed stream [i]added[/i] to the output, not overwritten.
+				- [param output_buf]: The output buffer to write the processed audio stream for the given [param channel] into.
 				- [param source_buf]: The input buffer to read the incoming audio stream info from.
 				- [param frame_count]: The length of [param source_buf] and [param output_buf]; i.e. the number of [AudioFrame]s to process.
 				[b]Note:[/b] this should only be implemented in a GDExtension; GDScript and C# don't work.
@@ -83,4 +83,9 @@
 			</description>
 		</method>
 	</methods>
+	<members>
+		<member name="playback_disable_threshold_db" type="float" setter="set_playback_disable_threshold_db" getter="get_playback_disable_threshold_db" default="-80.0">
+			Theshold used to disable audio stream playback after the stream is done mixing. Used to avoid abrupt cutoffs when any processing effects are active (e.g. delay) that continue producing audio after the stream has finished.
+		</member>
+	</members>
 </class>
